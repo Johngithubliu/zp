@@ -2145,7 +2145,7 @@ void comm()	_task_	COMM
 					os_delete_task(SYS_CON);
 					os_wait2(K_TMO,100);
 					os_delete_task(UP_BAG);
-					os_delete_task(COMM);
+				//	os_delete_task(COMM);
 		
 				}
 				else
