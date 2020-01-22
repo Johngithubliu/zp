@@ -21,7 +21,7 @@
 																		//2*2=counter0 
 																		//2*2,reside.
 
-#define VER 239
+//#define VER 239
 //#define middle_store	X58
 #define middle_store	delay_t[51]
 #define ERROR_CHECK_TIME	300	
@@ -50,7 +50,7 @@ void moveout();
 
 unsigned long int counter0;         /* counter for pack       */
 
-
+const unsigned char VER=239;
 
 data  unsigned char in[8];
 data  unsigned char out[8];
@@ -128,7 +128,7 @@ const unsigned char parament_default[64]=
 		
 	0xaa //T64,Flag
 };
-unsigned char task_status[16];
+xdata unsigned char task_status[16];
 bit status;
 bit f_save;
 bit x41,x12,x13,x22,x26;
@@ -169,19 +169,19 @@ unsigned char count_y41=0;
 unsigned int t_x48_check=0;
 unsigned int t_x49_check=0;
 
-unsigned char control_count=0; 
+unsigned char control_count=3; 
 /******************************************************************************/
 /*       Task 0 'job0':  RTX-51 tiny starts execution with task 0             */
 /******************************************************************************/
 void init () _task_ INIT  {    
 	
 		init_sys();
+	
 		os_create_task (SYS_CON);               
 		os_wait2(K_TMO,250);	
-
-
-		os_create_task(OPEN_BAG);
 	
+		os_create_task(OPEN_BAG);
+		os_wait2(K_TMO,10);
 		os_create_task (GIVE_BAG);               
 		os_wait2(K_TMO,10);
 		os_create_task (GET_BAG);                
@@ -239,7 +239,8 @@ void init_sys()
 
 	//set_y(46);
 	moveout();
-	for(j=0;j<200000;j++)
+	//for(j=0;j<200000;j++)
+	for(j=0;j<2;j++)
 	{
 		for(i=0;i<8;i++)out[i]=0x00;
 		for(i=0;i<16;i++)task_status[i]=0x00;
@@ -1534,12 +1535,14 @@ void up_bag()	_task_	UP_BAG
 				
 							os_wait2(K_TMO,delay_t[5]*10);
 					//		while(status==STOP){os_wait2(K_TMO,5);};//if system stop,wait ...
+								if(++delay_t[61]==0)++delay_t[60];
+							check_counter0();
 							counter0++;
 							f_counter0=1;
 							if(control_count)control_count--;
 							else 
 							{
-								error=98;
+								error=97;
 								stop();
 								printf("**-");
 								os_delete_task(PUSH_PACK);
@@ -1549,8 +1552,7 @@ void up_bag()	_task_	UP_BAG
 								os_delete_task(UP_BAG);
 							}
 							
-							if(++delay_t[61]==0)++delay_t[60];
-							check_counter0();
+						
 					
 							//---------add by 20160327
 							if(X27){/*set_y(41)*/;f_y41=0;}
@@ -2102,16 +2104,16 @@ void sew_pack()	_task_	SEW_PACK
 
 void comm()	_task_	COMM
 {
-	int i=0;
+	//int i=0;
 	unsigned char step=0;
 	unsigned char ch;
-	printf("task COMM started!\n");	
-	printf("\nver---%d\n",VER&&0x0ff);
-	
+	printf("started!\n");	
+	//printf("Ver");
 	while(1)
 	{
 			
 		ch=(_getkey ());
+		//SBUF=ch;
 		switch(step)
 		{			
 			case 0:
@@ -2133,19 +2135,34 @@ void comm()	_task_	COMM
 			case 4:
 				control_count=ch*20;
 				step=0;
-				if(f_counter0)
+				if(ch==0)
 				{
-					printf("**P(%ld)",counter0);
-					f_counter0=0;
+					error=98;
+					stop();
+					printf("**.");
+					os_delete_task(PUSH_PACK);
+					os_wait2(K_TMO,100);
+					os_delete_task(SYS_CON);
+					os_wait2(K_TMO,100);
+					os_delete_task(UP_BAG);
+					os_delete_task(COMM);
+		
 				}
+				else
+				{
+					if(f_counter0)
+					{
+						printf("**P(%ld)",counter0);
+						f_counter0=0;
+					}
+					//else printf("**AU(%d)",control_count&0x0ff);
+				}
+			
 			break;
 			
 		}
 		
-		
-		
-		
-		//os_wait2(K_TMO,100);
+	
 	}
 }
 

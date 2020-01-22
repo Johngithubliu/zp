@@ -92,14 +92,14 @@ void serial (void) interrupt 4 using 2  { /* use registerbank 2 for interrupt */
     c = SBUF;                        /* read character                        */
     RI = 0;                          /* clear interrupt request flag          */
     switch (c)  {                    /* process character                     */
-      case CTRL_S:
-        sendstop = 1;                /* if Control+S stop transmission        */
-        break;
+    //  case CTRL_S:
+    //    sendstop = 1;                /* if Control+S stop transmission        */
+    //    break;
 
-      case CTRL_Q:
-        start_trans = sendstop;      /* if Control+Q start transmission       */
-        sendstop = 0;
-        break;
+    //  case CTRL_Q:
+    //    start_trans = sendstop;      /* if Control+Q start transmission       */
+    //    sendstop = 0;
+    //    break;
 
       default:                       /* read all other characters into inbuf  */
         if (istart + ILEN != iend)  {
@@ -152,12 +152,9 @@ void serial_init (void) 	//1200bps@22.1184MHz
 	TH1 = 0xD0;		//????????
 	ET1 = 0;		//?????1??
 	TR1 = 1;		//?????1
+	TI=0;
 }
 
 	
-
-
-
-
 
 
