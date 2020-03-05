@@ -21,7 +21,7 @@
 																		//2*2=counter0 
 																		//2*2,reside.
 
-//#define VER 239
+
 //#define middle_store	X58
 #define middle_store	delay_t[51]
 #define ERROR_CHECK_TIME	300	
@@ -50,7 +50,7 @@ void moveout();
 
 unsigned long int counter0;         /* counter for pack       */
 
-const unsigned char VER=239;
+const unsigned char VER=240;
 
 data  unsigned char in[8];
 data  unsigned char out[8];
@@ -182,21 +182,21 @@ void init () _task_ INIT  {
 	
 		os_create_task(OPEN_BAG);
 		os_wait2(K_TMO,10);
-		os_create_task (GIVE_BAG);               
+		os_create_task(GIVE_BAG);               
 		os_wait2(K_TMO,10);
-		os_create_task (GET_BAG);                
+		os_create_task(GET_BAG);                
 		os_wait2(K_TMO,10);
 		os_create_task(ARRANGE_BAG);
 		os_wait2(K_TMO,10);
 	
-	  os_create_task (UP_BAG);               
+	  os_create_task(UP_BAG);               
     os_wait2(K_TMO,10);
-	  os_create_task (PUSH_PACK);
+	  os_create_task(PUSH_PACK);
 		os_wait2(K_TMO,10);	
-	  os_create_task (SEW_PACK);               
+	  os_create_task(SEW_PACK);               
 		os_wait2(K_TMO,10);
 
-		os_create_task	(COMM);
+		os_create_task(COMM);
 		os_wait2(K_TMO,10);	
 		os_create_task(MODBUS);
 		os_wait2(K_TMO,10);
@@ -240,6 +240,12 @@ void init_sys()
 	//set_y(46);
 	moveout();
 	//for(j=0;j<200000;j++)
+	
+	os_wait2(K_TMO,100);
+	os_wait2(K_TMO,100);
+	os_wait2(K_TMO,100);
+	os_wait2(K_TMO,100);
+	os_wait2(K_TMO,100);
 	for(j=0;j<2;j++)
 	{
 		for(i=0;i<8;i++)out[i]=0x00;
@@ -259,7 +265,7 @@ void init_sys()
 	movein();
 	counter0=((unsigned long int)Iap_Read(0x200)<<24)+((unsigned long int)Iap_Read(0x201)<<16)+((unsigned long int)Iap_Read(0x202)<<8)+(unsigned long int)Iap_Read(0x203);
 	if(X26&&X27&&X43)counter0=0l;//for clear counter0 value.
-	//if(X7)counter0=-1;
+	//if(X7)counter0=0x01fffffe;
 	
 	//delay_t[46]=VER;
 	//if(delay_t[47]!=0xaa)
@@ -2111,7 +2117,9 @@ void comm()	_task_	COMM
 	//printf("Ver");
 	while(1)
 	{
-			
+		//	printf("%c",(step++));
+		//os_wait2(K_TMO,2);
+		
 		ch=(_getkey ());
 		//SBUF=ch;
 		switch(step)
@@ -2135,6 +2143,7 @@ void comm()	_task_	COMM
 			case 4:
 				control_count=ch*20;
 				step=0;
+				//printf("##");
 				if(ch==0)
 				{
 					error=98;
@@ -2152,13 +2161,16 @@ void comm()	_task_	COMM
 				{
 					if(f_counter0)
 					{
-						printf("**P(%ld)",counter0);
+						printf("**P(%lu)",counter0);
 						f_counter0=0;
 					}
 					//else printf("**AU(%d)",control_count&0x0ff);
 				}
 			
 			break;
+			default:
+				step=0;
+			
 			
 		}
 		

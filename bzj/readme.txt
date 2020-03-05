@@ -1,3 +1,5 @@
+v240
+fix bug COMM with BC26 at poweron.
 
 v239
 BC26 control ok.
