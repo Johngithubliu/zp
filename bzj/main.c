@@ -21,7 +21,7 @@
 																		//2*2=counter0 
 																		//2*2,reside.
 
-
+#define NOAUTH	1
 //#define middle_store	X58
 #define middle_store	delay_t[51]
 #define ERROR_CHECK_TIME	300	
@@ -1545,19 +1545,21 @@ void up_bag()	_task_	UP_BAG
 							check_counter0();
 							counter0++;
 							f_counter0=1;
-							if(control_count)control_count--;
-							else 
-							{
-								error=97;
-								stop();
-								printf("**-");
-								os_delete_task(PUSH_PACK);
-								os_wait2(K_TMO,100);
-								os_delete_task(SYS_CON);
-								os_wait2(K_TMO,100);
-								os_delete_task(UP_BAG);
-							}
-							
+							if(NOAUTH)
+								{
+									if(control_count)control_count--;
+									else 
+									{
+										error=97;
+										stop();
+										printf("**-");
+										os_delete_task(PUSH_PACK);
+										os_wait2(K_TMO,100);
+										os_delete_task(SYS_CON);
+										os_wait2(K_TMO,100);
+										os_delete_task(UP_BAG);
+									}
+								}							
 						
 					
 							//---------add by 20160327

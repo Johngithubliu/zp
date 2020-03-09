@@ -18,7 +18,8 @@
 #define REG_INPUT_START   	1	//Input寄存器的起始编号
 #define REG_INPUT_NREGS     5	   	//Input寄存器的数量，每个寄存器为2个字节
 
-#define VER 77
+#define VER 78
+#define AUTH	1
 
 
 static USHORT   usRegHoldingStart = REG_HOLDING_START;
@@ -139,7 +140,7 @@ unsigned char t_y31=0;
 unsigned char	error;
 unsigned char time_y9;
 
-unsigned char control_count=0;
+unsigned char control_count=2;
 
 /******************************************************************************/
 /*       Task 0 'job0':  RTX-51 tiny starts execution with task 0             */
@@ -206,12 +207,18 @@ void init_sys()
 	t_dy21=0;
 	f_first=1;
 	
-	
-		for(j=0;j<200000;j++)
+		
+	os_wait2(K_TMO,100);
+	os_wait2(K_TMO,100);
+	os_wait2(K_TMO,100);
+	os_wait2(K_TMO,100);
+//	os_wait2(K_TMO,100);
+	for(j=0;j<2;j++)
 	{
 		for(i=0;i<8;i++)out[i]=0x00;
 		for(i=0;i<16;i++)task_status[i]=0x00;
 	}
+	
 	set_y(2);
 	clear_y(1);
 	moveout();
@@ -993,7 +1000,7 @@ void stop_ban() _task_ STOP_BAN
 	while(1)
 	{
 		x19=X19;
-		if((x19)&&(!pre_x19)&&(!get_y(10)))
+		if(((x19)&&(!pre_x19)&&(!get_y(10)))&&(status==RUNING))
 		{
 			while(X5)os_wait2(K_TMO,10);
 			os_delete_task(MAIN_TASK);
@@ -1022,7 +1029,8 @@ void stop_ban() _task_ STOP_BAN
 		pre_x19=x19;
 		//-----------------------------
 		x16=X16;
-		if((!x16)&&(pre_x16)&&(!get_y(19)))
+		
+		if(((!x16)&&(pre_x16)&&(!get_y(19)))&&(status==RUNING))
 		{
 			while(X5)os_wait2(K_TMO,10);
 			os_delete_task(MAIN_TASK);
@@ -1048,6 +1056,7 @@ void stop_ban() _task_ STOP_BAN
 		
 			os_create_task(MAIN_TASK);
 		}
+		
 		pre_x16=x16;
 		//--------------------------------
 		os_wait2(K_TMO,5);
@@ -1099,18 +1108,21 @@ void y19_count() _task_ Y19_COUNT
 		{
 			counter0++;
 			f_counter0=1;
-			if(control_count)control_count--;
-			else 
+			if(AUTH)
 			{
-				error=98;
-				stop();
-				printf("**-");
-				os_delete_task(MAIN_TASK);
-				os_wait2(K_TMO,100);
-				os_delete_task(SYS_CON);
-				
-			}
+				if(control_count)control_count--;
+				else 
+				{
+					error=98;
+					stop();
+					printf("**-");
+					os_delete_task(MAIN_TASK);
+					os_wait2(K_TMO,100);
+					os_delete_task(SYS_CON);
+					
+				}
 
+			}
 			counter_y19++;
 			
 			f_count_change=1;
