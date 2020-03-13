@@ -1,3 +1,9 @@
+v242
+if no module,then no work immediately.
+
+v241
+X34 add check resure.
+
 v240
 fix bug COMM with BC26 at poweron.
 

@@ -21,7 +21,8 @@
 																		//2*2=counter0 
 																		//2*2,reside.
 
-#define NOAUTH	1
+#define AUTH	0
+
 //#define middle_store	X58
 #define middle_store	delay_t[51]
 #define ERROR_CHECK_TIME	300	
@@ -50,7 +51,7 @@ void moveout();
 
 unsigned long int counter0;         /* counter for pack       */
 
-const unsigned char VER=240;
+const unsigned char VER=242;
 
 data  unsigned char in[8];
 data  unsigned char out[8];
@@ -169,7 +170,7 @@ unsigned char count_y41=0;
 unsigned int t_x48_check=0;
 unsigned int t_x49_check=0;
 
-unsigned char control_count=3; 
+unsigned char control_count=0; 
 /******************************************************************************/
 /*       Task 0 'job0':  RTX-51 tiny starts execution with task 0             */
 /******************************************************************************/
@@ -177,8 +178,6 @@ void init () _task_ INIT  {
 	
 		init_sys();
 	
-		os_create_task (SYS_CON);               
-		os_wait2(K_TMO,250);	
 	
 		os_create_task(OPEN_BAG);
 		os_wait2(K_TMO,10);
@@ -200,6 +199,12 @@ void init () _task_ INIT  {
 		os_wait2(K_TMO,10);	
 		os_create_task(MODBUS);
 		os_wait2(K_TMO,10);
+		
+		if(AUTH)					while(control_count==0)os_wait2(K_TMO,100);
+		
+		os_create_task (SYS_CON);               
+		os_wait2(K_TMO,250);	
+	
 		os_delete_task(INIT);
   
 }
@@ -281,7 +286,7 @@ void sys_con() _task_ SYS_CON  {
 	static bit pre_x44=0;
 	static bit x18,x37;
 	static bit pre_x45=0,x45,ppre_x45=0;
-	static bit pre_x34=0,x34;
+	static bit pre_x34=0,x34,ppre_x34=0;
 	static bit pre_x35=0,x35;
 	static bit pre_x48=0,x48,ppre_x48=0;
 	static bit pre_x49=0,x49;
@@ -481,8 +486,11 @@ static bit pre_x54=0,x54;
 		//x34 ----------------
 		//x34=X34;
 		x34=X34;//use X4 stop key to save
-		if((x34)&&(!pre_x34))
+		if((x34)&&pre_x34&&(!ppre_x34))
 		{if((error==0||error>=100))error=34;stop();}
+		
+		if(x34&&pre_x34)ppre_x34=1;
+		if(!x34&&!pre_x34)ppre_x34=0;
 		pre_x34=x34;
 		//end x34--------------
 		
@@ -1545,7 +1553,7 @@ void up_bag()	_task_	UP_BAG
 							check_counter0();
 							counter0++;
 							f_counter0=1;
-							if(NOAUTH)
+							if(AUTH)
 								{
 									if(control_count)control_count--;
 									else 
