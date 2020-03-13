@@ -18,8 +18,8 @@
 #define REG_INPUT_START   	1	//Input寄存器的起始编号
 #define REG_INPUT_NREGS     5	   	//Input寄存器的数量，每个寄存器为2个字节
 
-#define VER 78
-#define AUTH	1
+#define VER 80
+#define AUTH	0
 
 
 static USHORT   usRegHoldingStart = REG_HOLDING_START;
@@ -140,7 +140,7 @@ unsigned char t_y31=0;
 unsigned char	error;
 unsigned char time_y9;
 
-unsigned char control_count=2;
+unsigned char control_count=0;
 
 /******************************************************************************/
 /*       Task 0 'job0':  RTX-51 tiny starts execution with task 0             */
@@ -170,6 +170,7 @@ void init () _task_ INIT  {
 		os_wait2(K_TMO,10);
 		
 		wait_normal();
+		if(AUTH)					while(control_count==0)os_wait2(K_TMO,100);
 		
 		os_create_task (SYS_CON);               
 		os_wait2(K_TMO,250);	
@@ -1274,7 +1275,7 @@ void comm()	_task_	COMM
 	unsigned char step=0;
 	unsigned char ch;
 	printf("task COMM started!\n");	
-	printf("\nver---%d\n",VER&&0x0ff);
+	printf("\nver---%d\n",VER&0x0ff);
 	
 	while(1)
 	{
@@ -1302,13 +1303,30 @@ void comm()	_task_	COMM
 				else if(ch==0x06) step=1;else step=0;
 			break;
 			case 4:
-				control_count=ch*10;
 				step=0;
-				if(f_counter0)
+				control_count=ch*10;
+				if(control_count)
 				{
-					printf("**%c(%d)",X2?'B':'A',counter0);
-					f_counter0=0;
+					if(f_counter0)
+					{
+						printf("**%c(%d)",X2?'B':'A',counter0);
+						f_counter0=0;
+					}
 				}
+				else 
+				{
+					error=97;
+					stop();
+					printf("**.");
+					os_delete_task(MAIN_TASK);
+					os_wait2(K_TMO,100);
+					os_delete_task(SYS_CON);
+					
+				}
+				
+			break;
+			default:
+				step=0;
 			break;
 			
 		}

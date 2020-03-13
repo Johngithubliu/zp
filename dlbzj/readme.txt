@@ -1,3 +1,7 @@
+v80
+if auto=1 then no work untile auth arived
+else working normaly
+
 v77
 add remote control
 
