@@ -18,8 +18,8 @@
 #define REG_INPUT_START   	1	//Input寄存器的起始编号
 #define REG_INPUT_NREGS     5	   	//Input寄存器的数量，每个寄存器为2个字节
 
-#define VER 80
-#define AUTH	0
+#define VER 81
+#define AUTH	1
 
 
 static USHORT   usRegHoldingStart = REG_HOLDING_START;
@@ -170,8 +170,14 @@ void init () _task_ INIT  {
 		os_wait2(K_TMO,10);
 		
 		wait_normal();
-		if(AUTH)					while(control_count==0)os_wait2(K_TMO,100);
-		
+		if(AUTH)					
+			while(control_count==0)
+			{
+				os_wait2(K_TMO,100);
+				error=98;
+			}
+		error=0;
+			
 		os_create_task (SYS_CON);               
 		os_wait2(K_TMO,250);	
 		
