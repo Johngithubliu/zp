@@ -21,7 +21,7 @@
 																		//2*2=counter0 
 																		//2*2,reside.
 
-#define AUTH	0
+#define AUTH	1
 
 //#define middle_store	X58
 #define middle_store	delay_t[51]
@@ -51,7 +51,7 @@ void moveout();
 
 unsigned long int counter0;         /* counter for pack       */
 
-const unsigned char VER=242;
+const unsigned char VER=243;
 
 data  unsigned char in[8];
 data  unsigned char out[8];
@@ -200,7 +200,13 @@ void init () _task_ INIT  {
 		os_create_task(MODBUS);
 		os_wait2(K_TMO,10);
 		
-		if(AUTH)					while(control_count==0)os_wait2(K_TMO,100);
+		if(AUTH)					
+			while(control_count==0)
+			{
+				os_wait2(K_TMO,100);
+				error=97;
+			}
+		error=0;
 		
 		os_create_task (SYS_CON);               
 		os_wait2(K_TMO,250);	
