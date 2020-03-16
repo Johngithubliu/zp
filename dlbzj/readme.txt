@@ -1,3 +1,5 @@
+v82
+stop ban remove the condition that status must be running.
 v80
 if auto=1 then no work untile auth arived
 else working normaly

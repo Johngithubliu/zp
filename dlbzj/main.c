@@ -18,7 +18,7 @@
 #define REG_INPUT_START   	1	//Input寄存器的起始编号
 #define REG_INPUT_NREGS     5	   	//Input寄存器的数量，每个寄存器为2个字节
 
-#define VER 81
+#define VER 82
 #define AUTH	1
 
 
@@ -1007,7 +1007,7 @@ void stop_ban() _task_ STOP_BAN
 	while(1)
 	{
 		x19=X19;
-		if(((x19)&&(!pre_x19)&&(!get_y(10)))&&(status==RUNING))
+		if(((x19)&&(!pre_x19)&&(!get_y(10))))
 		{
 			while(X5)os_wait2(K_TMO,10);
 			os_delete_task(MAIN_TASK);
@@ -1037,7 +1037,7 @@ void stop_ban() _task_ STOP_BAN
 		//-----------------------------
 		x16=X16;
 		
-		if(((!x16)&&(pre_x16)&&(!get_y(19)))&&(status==RUNING))
+		if(((!x16)&&(pre_x16)&&(!get_y(19))))
 		{
 			while(X5)os_wait2(K_TMO,10);
 			os_delete_task(MAIN_TASK);
