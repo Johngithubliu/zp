@@ -1,3 +1,6 @@
+v83
+error 98 and error 16 overly bug fix.
+
 v82
 stop ban remove the condition that status must be running.
 v80
