@@ -22,6 +22,8 @@
 																		//2*2,reside.
 
 #define AUTH	1
+#define AFTER_X48	1
+
 
 //#define middle_store	X58
 #define middle_store	delay_t[51]
@@ -579,7 +581,35 @@ static bit pre_x54=0,x54;
 		
 		
 		//x48 ----------------
-		x48=X48;
+		//if(AFTER_X48)		x48=X48;
+		//else x48=0;
+		if(AFTER_X48)		
+		{
+			x48=X48;
+			x49=X49;
+			x50=X50;
+			x51=X51;
+			x52=X52;
+			x53=X53;
+			x54=X54;
+			x55=X55;
+//			x56=X56;
+			x57=X57;
+		}
+		else 
+		{
+			x48=0;
+			x49=0;
+			x50=0;
+			x51=0;
+			x52=0;
+			x53=0;
+			x54=0;
+			x55=0;
+		//	x56=0;
+			x57=0;
+		}
+
 		if(x48&&pre_x48&&!ppre_x48&&get_y(48))
 		{
 			//x35sx48=0;
@@ -608,7 +638,8 @@ static bit pre_x54=0,x54;
 		//end x48--------------
 		
 			//x49 ----------------
-		x49=X49;
+		//if(AFTER_X48)		x49=X49;
+		//else x49=0;
 		if(x49&&!pre_x49)
 		{
 			
@@ -617,13 +648,7 @@ static bit pre_x54=0,x54;
 		}
 		pre_x49=x49;
 		//end x49--------------
-
-		x50=X50;
-		x51=X51;
-		x52=X52;
-		x53=X53;
-		x54=X54;
-
+		
 		if((!x50)&&(!pre_x50))
 		{if((error==0||error>=100))error=50;stop();}
 		//else if(error==50)error=0;
@@ -687,7 +712,7 @@ static bit pre_x54=0,x54;
 		//end x56--------------
 		
 		//x55 ----------------
-		x57=X57;
+		//x57=X57;
 		if(x57&&pre_x57&&!ppre_x57&&!x55&&(status_updown==55))//up
 		{
 			//if((status_updown==56)||(status_updown==55))
