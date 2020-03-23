@@ -18,7 +18,7 @@
 #define REG_INPUT_START   	1	//Input寄存器的起始编号
 #define REG_INPUT_NREGS     5	   	//Input寄存器的数量，每个寄存器为2个字节
 
-#define VER 83
+#define VER 85
 #define AUTH	1
 
 
@@ -1105,12 +1105,13 @@ void step_13() _task_ STEP_13
 */
 void y19_count() _task_ Y19_COUNT
 {
-	static bit pr_x10;
+	static bit pr_x10=1;
 	unsigned char i;
 	bit x10;
 	while(1)
 	{
-		x10=X15;
+		if(X7)		x10=X1;
+		else			x10=X15;
 		if((x10)&&(!pr_x10))
 		{
 			counter0++;
@@ -1277,11 +1278,11 @@ void sew_pack()	_task_	SEW_PACK
 
 void comm()	_task_	COMM
 {
-	int i=0;
+	//int i=0;
 	unsigned char step=0;
 	unsigned char ch;
-	printf("task COMM started!\n");	
-	printf("\nver---%d\n",VER&0x0ff);
+	printf("started!\n");	
+	//printf("Ver");
 	
 	while(1)
 	{

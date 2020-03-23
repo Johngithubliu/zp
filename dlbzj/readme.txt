@@ -1,3 +1,9 @@
+
+v85
+comm() remove int i;(but ,why?????????)
+v84
+fix bug X15 counter when power on ,init to 1;
+
 v83
 error 98 and error 16 overly bug fix.
 
