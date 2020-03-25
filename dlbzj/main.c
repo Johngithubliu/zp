@@ -19,7 +19,7 @@
 #define REG_INPUT_NREGS     5	   	//Input寄存器的数量，每个寄存器为2个字节
 
 #define VER 85
-#define AUTH	1
+#define AUTH	0
 
 
 static USHORT   usRegHoldingStart = REG_HOLDING_START;

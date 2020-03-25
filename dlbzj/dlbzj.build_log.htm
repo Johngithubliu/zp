@@ -25,6 +25,7 @@ Project File Date:  01/02/2020
 Rebuild target 'Target 1'
 assembling STARTUP.A51...
 compiling main.c...
+main.c(1121): warning C294: unreachable code
 assembling Conf_tny.A51...
 compiling SERIAL.C...
 compiling 24lc16.c...
@@ -85,10 +86,6 @@ linking...
 *** WARNING L15: MULTIPLE CALL TO SEGMENT
     SEGMENT: ?PR?MOVEOUT?MAIN
     CALLER1: ?PR?STOP_BAN?MAIN
-    CALLER2: ?PR?Y19_COUNT?MAIN
-*** WARNING L15: MULTIPLE CALL TO SEGMENT
-    SEGMENT: ?PR?MOVEOUT?MAIN
-    CALLER1: ?PR?Y19_COUNT?MAIN
     CALLER2: ?PR?STEP_4?MAIN
 *** WARNING L15: MULTIPLE CALL TO SEGMENT
     SEGMENT: ?PR?MOVEIN?MAIN
@@ -98,14 +95,6 @@ linking...
     SEGMENT: ?PR?MOVEOUT?MAIN
     CALLER1: ?PR?STEP_4?MAIN
     CALLER2: ?PR?SEW_PACK?MAIN
-*** WARNING L15: MULTIPLE CALL TO SEGMENT
-    SEGMENT: ?PR?PRINTF?PRINTF
-    CALLER1: ?PR?Y19_COUNT?MAIN
-    CALLER2: ?PR?COMM?MAIN
-*** WARNING L15: MULTIPLE CALL TO SEGMENT
-    SEGMENT: ?PR?_PUTCHAR?SERIAL
-    CALLER1: ?PR?Y19_COUNT?MAIN
-    CALLER2: ?PR?COMM?MAIN
 *** WARNING L15: MULTIPLE CALL TO SEGMENT
     SEGMENT: ?PR?MOVEOUT?MAIN
     CALLER1: ?PR?SEW_PACK?MAIN
@@ -146,10 +135,10 @@ linking...
     SEGMENT: ?PR?XMBRTUTRANSMITFSM?MBRTU
     CALLER1: ?PR?MODBUS?MAIN
     CALLER2: ?PR?UARTISR?PORTSERIAL
-Program Size: data=147.0 xdata=712 code=15149
+Program Size: data=140.7 xdata=671 code=15076
 creating hex file from "dlbzj"...
-"dlbzj" - 0 Error(s), 35 Warning(s).
-Build Time Elapsed:  00:00:07
+"dlbzj" - 0 Error(s), 33 Warning(s).
+Build Time Elapsed:  00:00:05
 </pre>
 </body>
 </html>
