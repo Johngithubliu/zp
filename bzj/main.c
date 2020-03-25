@@ -21,8 +21,8 @@
 																		//2*2=counter0 
 																		//2*2,reside.
 
-#define AUTH	1
-#define AFTER_X48	1
+#define AUTH	0
+#define AFTER_X48	0
 
 
 //#define middle_store	X58
@@ -600,9 +600,9 @@ static bit pre_x54=0,x54;
 		{
 			x48=0;
 			x49=0;
-			x50=0;
-			x51=0;
-			x52=0;
+			x50=1;
+			x51=1;
+			x52=1;
 			x53=0;
 			x54=0;
 			x55=0;
@@ -672,8 +672,8 @@ static bit pre_x54=0,x54;
 		pre_x54=x54;
 
 		//x55 ----------------
-		x55=X55;	   
-		x57=X57;
+		//x55=X55;	   
+		//x57=X57;
 		if(x55&&pre_x55&&!ppre_x55&&!x57&&(status_updown==57))//up
 		{
 			//if((status_updown==56)||(status_updown==57))
