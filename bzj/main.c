@@ -21,8 +21,8 @@
 																		//2*2=counter0 
 																		//2*2,reside.
 
-#define AUTH	0
-#define AFTER_X48	0
+#define AUTH	1
+#define AFTER_X48	1
 
 
 //#define middle_store	X58
@@ -53,7 +53,7 @@ void moveout();
 
 unsigned long int counter0;         /* counter for pack       */
 
-const unsigned char VER=243;
+const unsigned char VER=244;
 
 data  unsigned char in[8];
 data  unsigned char out[8];
@@ -1961,11 +1961,13 @@ void push_pack()	_task_	PUSH_PACK
 	
 				//wait for X14..
 				
-			
-				while(!x41)				{		os_wait2(K_TMO,2);/*	if(error==0)error=141;	*/	}
-				while(!X14)				{		os_wait2(K_TMO,2);	if(error==0)error=114;		}
-				while(!f_back_enable_x18){os_wait2(K_TMO,2);if(error==0)error=118;}
-			//	os_wait2(K_TMO,20);
+			//-------***********************--------------------
+			//	while(!x41)				{		os_wait2(K_TMO,2);/*	if(error==0)error=141;	*/	}
+			//	while(!X14)				{		os_wait2(K_TMO,2);	if(error==0)error=114;		}
+			//	while(!f_back_enable_x18){os_wait2(K_TMO,2);if(error==0)error=118;}
+			//edit by John @20200410
+				
+				//	os_wait2(K_TMO,20);
 				if((error==130)||(error==131)||(error==141)||(error==114))error=0;
 				while(status==STOP){os_wait2(K_TMO,5);};//if system stop,wait ...
 				dt41=0;
@@ -1990,11 +1992,13 @@ void push_pack()	_task_	PUSH_PACK
 					if(!X26)if((error==0)||(error>100))error=126;
 					if(!x41)if((error==0)||(error>100))error=141;
 					if(!X18)if((error==0)||(error>100))error=118;
+					if(X15)if((error==0)||(error>100))error=115;
+					if(!f_back_enable_x18)if((error==0)||(error>100))error=118;
 					
 					os_wait2(K_TMO,2);
 					
 				}
-				if((error==114)||(error==130)||(error==131)||(error==126)||(error==141)||(error==118))error=0;
+				if((error==114)||(error==130)||(error==131)||(error==126)||(error==141)||(error==118)||(error==115))error=0;
 				task_status[PUSH_PACK]=13;	
 				os_wait2(K_TMO,dt41*10);
 				set_y(27);x26=0;f_back_enable=0;
