@@ -1,6 +1,6 @@
 
 //pulse_setting
-//v39
+//v39+++
 //copyright by John
 //2015.07.12
 
@@ -177,6 +177,8 @@ void backward();
 void forwardm1();
 void backwardm1();
 void find_z();
+void run_active(unsigned int );
+void run_active_u_d(unsigned long);
 
 unsigned char n1,n2;
 unsigned char cych,cycl;
@@ -325,10 +327,8 @@ void main(void)
 				if(pulse_active)
 				{
 					f_save=0;
-					pulse_save=pulse_l;
-					pulse_l=pulse_active;
-					forward();
-					pulse_l=pulse_save;
+					//run_active(pulse_active);
+					run_active_u_d(pulse_active);
 					pulse_active=0;
 				
 				}
@@ -696,7 +696,7 @@ void	init_curve()
 		//--******************get 1u2**********************
 		
 		
-		ppmm=line/coeffcient*fenzi/fenmu;
+		ppmm=1.0*line/coeffcient*fenzi/fenmu;
 		if(!ppmm)ppmm=8;
 		//debug=ppmm;
 		pulse_l_o=length1*ppmm;
@@ -1727,3 +1727,191 @@ void backwardm1()
 //2s section  end -------------------------------------
 
 }
+void run_active(unsigned int active)
+{
+	unsigned int n2;
+	if(debug>2000)debug=2000;
+	if(debug<0)debug=0;
+
+	if(debug)n2=65535-2500*8/debug;//debug used as last slow speed
+	else n2=200;
+	//n2=2000;
+	
+	TR0=0;
+	shadow_tl0=n2&0x0ff;
+	shadow_th0=n2>>8;
+	TH0=shadow_th0;
+	TL0=shadow_tl0;
+	TR0=1;
+
+	
+	pulse=active*10;
+	while(pulse)//wait  finishi
+	{
+		READP0;
+		if(TOC2)
+		{TR0=0;pulse=0;break;};	
+	}
+	
+}
+void run_active_u_d(unsigned long pulse_l)
+{
+	unsigned  int n1,n2,n3;
+//	unsigned long slow,pulse_slow;
+	unsigned int pulse_h;
+//	unsigned int pulse_h22;
+	unsigned char mult_pulse;
+	unsigned int pulse_remainder;
+	int i;
+
+	if(max_speed>2500)max_speed=2500;
+	if(max_speed<1)max_speed=1;
+		
+	if(debug>2000)debug=2000;
+	if(debug<0)debug=0;
+
+	if(debug)n2=65535-2500*8/debug;//debug used as last slow speed
+	else n2=0;
+	
+	if(speed4>1000)speed4=1000;
+	if(speed4<0)speed4=0;
+
+	if(speed4)n3=65535-2500*8/speed4;//debug used as last slow speed
+	else n3=0;
+	
+	pulse_l*=10;
+	real_up=up;//add @20150531
+	if(pulse_l<real_up*2)
+	{
+		mult_pulse=0;
+		pulse_remainder=0;
+		pulse_h=pulse_l/2;
+		top=0;
+	//	n1=pulse_l*n1/real_up/2;
+		if(n1<147){n1=147;}
+		
+	}
+	else
+	{
+		//top=pulse_l-real_up-real_up;
+		mult_pulse=(pulse_l-real_up-real_up)/(unsigned int)0xffff;
+		pulse_remainder=(pulse_l-real_up-real_up)%(unsigned int)0xffff;
+		pulse_h=real_up;
+	}
+
+	DIRECT=CW;
+
+	//-------------up------------------------		
+		pulse=pulse_h;
+		shadow_tl0=curver_1u[0]&0x0ff;
+		shadow_th0=curver_1u[0]>>8;
+		TH0=shadow_th0;
+		TL0=shadow_tl0;
+		TR0=1;
+	
+	//
+	
+		f_change_speed=0;
+		t_chsp=t_chsp1;
+		TL1=t_chsp;
+		TH1=t_chsp>>8;
+
+		TR1=1;
+		i=1;
+		while(i<=15)
+		{  	
+			while(!f_change_speed)
+			{
+				if(!pulse){i=15;TR1=0;break;}
+			};
+			if(curver_1u[i]<n2)
+			{//TH0=curver_1u[i];
+				shadow_tl0=curver_1u[i]&0x0ff;
+				shadow_th0=curver_1u[i]>>8;	
+			
+			}
+			else 
+			{//TH0=n1;
+				shadow_tl0=n2&0x0ff;
+				shadow_th0=n2>>8;
+			
+			
+			}
+			i++;
+			f_change_speed=0;		
+		};
+		TR1=0; 
+		while(pulse)//wait up finishi
+		{
+			READP0;
+		//	if(TOC2)
+		//	{TR0=0;pulse=0;return;};	
+		} 
+	
+	//top1
+
+	if(pulse_remainder)pulse=pulse_remainder;
+	TR0=1;
+	while(pulse)
+	{
+		READP0;
+		//if(TOC2)
+		//{TR0=0;pulse=0;return;};	
+	} //wait...;
+	
+		
+	for(i=0;i<mult_pulse;i++)
+	{
+		pulse=(unsigned int)0xffff;
+		TR0=1;
+		while(pulse)
+		{
+			READP0;
+		//	if(TOC2)
+		//	{TR0=0;pulse=0;return;};	
+		} //wait...;
+		
+	}
+//top1 finishi
+	
+	//-------------down------------------------		
+		pulse=pulse_h;
+		TR0=1;
+	
+		f_change_speed=0;
+		t_chsp=t_chsp1;
+		TL1=t_chsp;
+		TH1=t_chsp>>8;
+
+		TR1=1;
+		i=1;
+		while(i<=15)
+		{  	
+			while(!f_change_speed)
+			{
+				if(!pulse){i=15;TR1=0;break;}
+			};
+			//if(curver_1d[i]<TH0)TH0=curver_1d[i];
+			if(curver_1d[i]<(shadow_tl0+(unsigned int)(shadow_th0<<8)))
+			{
+				shadow_tl0=curver_1d[i]&0x0ff;
+				shadow_th0=curver_1d[i]>>8;
+				//if((shadow_tl0+(unsigned int)(shadow_th0<<8))<n2)
+				//{
+				//	shadow_tl0=n2&0x0ff;
+				//	shadow_th0=n2>>8;
+				//}
+				
+			}
+			
+			i++;
+			f_change_speed=0;		
+		};
+		TR1=0; 
+		while(pulse)
+		{
+			READP0;
+		//	if(TOC2)
+		//	{TR0=0;pulse=0;return;};	
+		} //wait...;
+	}
