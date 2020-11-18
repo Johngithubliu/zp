@@ -21,6 +21,9 @@
 #include "STM32FLASH_2.h"
 #include "timer.h"
 //#include "modbus_para.h"
+#include "usart1.h"
+#include "delay.h"
+
 void defult_parameters(void);
 #define Input_setting_para     X_input_state[4]
 
@@ -379,29 +382,8 @@ int main(void)
 //	RCC_Configuration();
 	USART1_Config();
 //	NVIC_Configuration();	
-
-	while(1)
-	{
-//		printf("\r\n this is a printf demo \r\n");
-//   	printf("\r\n 欢迎使用开拓者STM32开发板\r\n");
-/*this is a asking mode:printf emit a ask instruction */
-	printf("\r\n ABC123445\r\n");
-	printf("\r\n EFG123445\r\n");
-	printf("\r\n HIJ123445\r\n");
-	printf("\r\n KLM123449\r\n");
-//	printf("%s\r\n", str0);
-/*this is a waitting mode:read_com1 waitting slave reply */
-	     while(i<5)
-			  {
-				  str0[i]=read_com1();
-				  i++;
-			  }
-		  if(i>=5)i=0;
-/*Delay and Loop*/
-		Delay(0x02FFFF);
-		Delay(0x02FFFF);
 		
-  }
+		printf("\r\nUser debug mode open!\r\n");
 #endif
 
 #ifdef Com_interrupt
@@ -549,6 +531,7 @@ while(1)
  	RCC_Configuration();
 //	USART1_Config();
 	USART1_REMAP_Config();
+
 	USART2_Config();
 	USART3_Config();
 	UART4_Config();
@@ -592,6 +575,7 @@ while(1)
 			STMFLASH_Read (FL_Weighting_package,(u16*)&Weighting_package,2);
 
 			Recover_para();
+			printf("FF_Target_pulse =%ld\r\n",Modbus_pulse.target_totall_pulse);
 //init_TM1638(); //初始化TM1638
 
 //  if(!Command_01)
@@ -687,7 +671,7 @@ USART3_DE_lowx;
 //			Recover_para();
 //verify_filter_ADCODE();
  if (FIN)
- 	{
+ 	{/*
 	 for(i=0;i<12;i++)
 		{	USART_SendData(USART2,sig_pulse_string_modbus[i]);
 			while(USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
@@ -696,7 +680,7 @@ USART3_DE_lowx;
 	 for(i=0;i<12;i++)
 		{	USART_SendData(USART2,delt_pulse_string_modbus[i]);
 			while(USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
-		}
+		}*/
 	   FIN=0;
 	}
 

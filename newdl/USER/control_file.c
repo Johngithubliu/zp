@@ -1,5 +1,8 @@
 //#include <modbus_para.h>
 #include "math.h"
+#include "stm32f10x.h"
+#include "usart1.h"
+#include "delay.h"
 
 #define XX_image_Pulse_howmany_package 1
 #define XX_image_Tare_howmany_package  2
@@ -1462,24 +1465,40 @@ void PC_comm3_command(unsigned char Data)
 
 void delt_pulse(int weight_sig,int W_delt)
 {
- int px;                                     //0    1    2    3    4    5    6    7    8
- sig_pulse_string_modbus[8]=  weight_sig;
-  								px=mtb_crc_calc((unsigned char *)sig_pulse_string_modbus,9);
-								sig_pulse_string_modbus[9]=px&0x0ff;					             
-								sig_pulse_string_modbus[10]=(px>>8)&0x0ff;	
-
-
-
+		int px;
+		int i;;
+	//0    1    2    3    4    5    6    7    8
+ //sig_pulse_string_modbus[8]=  weight_sig;
+ // 								px=mtb_crc_calc((unsigned char *)sig_pulse_string_modbus,9);
+		//						sig_pulse_string_modbus[9]=px&0x0ff;					             
+			//					sig_pulse_string_modbus[10]=(px>>8)&0x0ff;	
 
 //delt_pulse_count=W_delt*((int)Modbus_pulse.target_totall_pulse/Target);
-delt_pulse_count=(float)W_delt*((float)Modbus_pulse.target_totall_pulse/(float)Target);
+		delt_pulse_count=(float)W_delt*((float)Modbus_pulse.target_totall_pulse/(float)Target);
+	
+		if(weight_sig)delt_pulse_count=0;
+	
+		delt_pulse_string_modbus[0]=0x0b;
+		delt_pulse_string_modbus[1]=0x06;
+		delt_pulse_string_modbus[2]=0x00;
+		delt_pulse_string_modbus[3]=0x17;
 
-delt_pulse_string_modbus[7]=delt_pulse_count>>8&0x000000ff;
-delt_pulse_string_modbus[8]=delt_pulse_count&0x000000ff;
- 								px=mtb_crc_calc((unsigned char *)delt_pulse_string_modbus,9);
-								delt_pulse_string_modbus[9]=px&0x0ff;					             
-								delt_pulse_string_modbus[10]=(px>>8)&0x0ff;	
-								FIN=1;
+		delt_pulse_string_modbus[4]=delt_pulse_count>>8&0x0ff;
+		delt_pulse_string_modbus[5]=delt_pulse_count&0x0ff;
+		px=mtb_crc_calc((unsigned char *)delt_pulse_string_modbus,6);
+		delt_pulse_string_modbus[6]=px&0x0ff;					             
+		delt_pulse_string_modbus[7]=(px>>8)&0x0ff;	
+	
+	USART2_DE_high;
+	 for(i=0;i<8;i++)
+		{	USART_SendData(USART1,delt_pulse_string_modbus[i]);
+			USART_SendData(USART2,delt_pulse_string_modbus[i]);
+			while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
+			while(USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
+		}
+		Delay(10000);
+		USART2_DE_lowx;
+		FIN=1;
 }
 
 // if (FIN)

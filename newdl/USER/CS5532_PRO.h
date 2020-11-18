@@ -429,6 +429,7 @@ unsigned char L_weight[4];
 
 /**send AD code to Main board**/
 			px0=CRC16((unsigned char *)AD_weight.L_weight,4);
+/*
  			USART_SendData(USART2,0xEF);
 			while(USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
 			USART_SendData(USART2,AD_weight.L_weight[3]);
@@ -447,7 +448,7 @@ unsigned char L_weight[4];
 
   			USART_SendData(USART2,0x00);
 			while(USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
-
+*/
  /**send AD code to Main board**/
 
 	return AD_weight.weight_L;

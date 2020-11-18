@@ -275,6 +275,7 @@ unsigned int mtb_crc_calc( unsigned char *crc_str, char count)
 
 void USART1_REMAP_Config(void)
 {
+	//for ml302 cat.1 
 	GPIO_InitTypeDef GPIO_InitStructure;
 	USART_InitTypeDef USART_InitStructure;
 	
@@ -293,7 +294,7 @@ void USART1_REMAP_Config(void)
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 	  
 		/* 串口1工作模式（USART1 mode）配置 */
-	USART_InitStructure.USART_BaudRate = 9600*2;//一般设置为9600;
+	USART_InitStructure.USART_BaudRate = 1200;//一般设置为9600;
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits = USART_StopBits_1;
 	USART_InitStructure.USART_Parity = USART_Parity_No ;
@@ -394,7 +395,7 @@ GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING; //浮空输入
 GPIO_Init(GPIOA, &GPIO_InitStructure);   //初始化GPIOA
  
 /* USART2 工作模式配置 */
-USART_InitStructure.USART_BaudRate =4800;//9600;// 9600*2; //波特率设置：115200
+USART_InitStructure.USART_BaudRate =9600*2;//9600;// 9600*2; //波特率设置：115200
 USART_InitStructure.USART_WordLength = USART_WordLength_8b; //数据位数设置：8位
 USART_InitStructure.USART_StopBits = USART_StopBits_1;  //停止位设置：1位
 USART_InitStructure.USART_Parity = USART_Parity_No ;  //是否奇偶校验：无
