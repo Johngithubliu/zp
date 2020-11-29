@@ -9,6 +9,8 @@
 #define XX_image_Even_howmany_package_Pre_process  3
 #define XX_image_Pre_feed  4 
 
+void send_302(void);
+
 int frezen_AD_DISPLAY_DELAY_TIMER;
 int frezen_AD_DISPLAY_DELAY_TIMER_flag;
 
@@ -260,7 +262,7 @@ long target_totall_pulse;
 unsigned char pulse[4];   
 }Modbus_pulse;
 int delt_pulse_count;
-void delt_pulse(int weight_sig,int W_delt);
+void delt_pulse(void);
 extern unsigned int mtb_crc_calc( unsigned char *crc_str, char count);
  unsigned char 	delt_pulse_string_modbus[15]={0x0b,0x10,0x00,0x02,0x00,0x01,0x02};
  unsigned char sig_pulse_string_modbus[15]={0x0b,0x10,0x00,0x0f,0x00,0x01,0x02,0x00,0x00};
@@ -272,14 +274,18 @@ unsigned char comm3_buffer[10],*comm3_buffer_point,Data,comm3_Modbus_Counter;
  char Dis_adxx[10];
 void PC_comm3_command(unsigned char Data);
 int Data_Addr;
+ 
+unsigned char F302=0;
+unsigned char F302_Fram[9];
+ 
 void Scanning_input_KLTT(void)
 {
 long i;
 //		if (~Start_Late_Status&Input_start)
 		if (Input_start)
 		{
-			for(i=0;i<10000000;i++);
-			if(!Input_start)return;
+		//	for(i=0;i<10000000;i++);
+		//	if(!Input_start)return;
 
 
 		    if(state_operation==Machine_Pause)
@@ -290,10 +296,12 @@ long i;
 		}//启动后	 //port.0
 		
 //		if (~Stop_Late_Status&Input_stop)	  //port.1
+		
+
 		if (Input_stop)	  //port.1
 		 {
-			for(i=0;i<10000000;i++);
-			if(!Input_stop)return;
+			//for(i=0;i<10000000;i++);
+			//if(!Input_stop)return;
 
 				state_operation=-1;
 				Un_Tare                 ;//[0]=0
@@ -887,7 +895,8 @@ void process_feed_material(void)
 						//*2017-10-28am*
 	 			if (!c_t100) //参数提前延时 
 					{			//Pre_fed; //*2017-10-28am*
-								system_indicator=7;state_operation=10;//提前输出
+								system_indicator=7;
+								//state_operation=10;//提前输出
 								Delt_temp=abs(Target+Dlet_error); // 参数允差 Dlet_error 参数定值 Target
 								if (Modbus_weight.weight_long>=Delt_temp)
 									{ //超上差?
@@ -900,27 +909,34 @@ void process_feed_material(void)
 //										get_test_result_form_stack();
 //										FIN=1;
 										
-										delt_pulse(1,Modbus_weight.weight_long-Delt_temp);
+										//delt_pulse(1,Modbus_weight.weight_long-Delt_temp);
 //									  store_test_result_to_stack();
 //									  get_test_result_form_stack();
 //									  px=status_and_datum();
-
+							
 //									  break;
+										send_302();
 									}
 								Delt_temp=abs(Target-Dlet_error); // 参数允差 Dlet_error 参数定值 Target
 								if (Modbus_weight.weight_long<=Delt_temp)
 									{ //欠下差? 
+										
 									  Feed_signal_buffer[1]|=0x10;	//反馈信号，如 欠差点亮
-									  auto_t100	=0;state_operation=10;LOW_ERR;
-									  system_indicator=1; //欠差
+									  //auto_t100	=0;state_operation=10;LOW_ERR;
+									  
+										
+										system_indicator=1; //欠差
 									  Signal_lamp[0]=0x01;	// 绿灯
 //									  store_test_result_to_stack();
 //									  accumulate();
 //										store_test_result_to_stack();
 //										get_test_result_form_stack();
 //										FIN=1; 
-										
-										delt_pulse(0,Delt_temp-Modbus_weight.weight_long );
+										delt_pulse_count=(float)(Delt_temp-Modbus_weight.weight_long)*((float)Modbus_pulse.target_totall_pulse/(float)Target);
+										delt_pulse();
+										//c_t100=Delay_Pre_process+delt_pulse_count/50;
+										c_t100=Delay_Pre_process;
+										auto_t100=0;state_operation=9;
 //									  break;
 									}
 								 //合格
@@ -936,12 +952,16 @@ void process_feed_material(void)
 //										get_test_result_form_stack();
 //										FIN=1;
 //									  break;
-							        }
+										
+										send_302();
+							       }
 
 									  store_test_result_to_stack();
 									  accumulate();
 									  frezen_AD_DISPLAY_DELAY_TIMER=3;
 									  frezen_AD_DISPLAY_DELAY_TIMER_flag=1;
+										
+										
 
 //					if(system_indicator==10) //合格	
 //					{Signal_lamp[7]=0x01;}	// 绿灯
@@ -1381,7 +1401,7 @@ void PC_comm3_command(unsigned char Data)
 				   }
 				   if(strcmp(comm3_buffer,"Stop")==0)
 				   {
-						state_operation=-1;
+//						state_operation=-1;
 						Un_Tare                 ;//[0]=0
 						Un_Pass                 ;//[1]=0
 						Un_Over                 ;//[2]=0
@@ -1463,7 +1483,7 @@ void PC_comm3_command(unsigned char Data)
 
 
 
-void delt_pulse(int weight_sig,int W_delt)
+void delt_pulse()
 {
 		int px;
 		int i;;
@@ -1474,9 +1494,9 @@ void delt_pulse(int weight_sig,int W_delt)
 			//					sig_pulse_string_modbus[10]=(px>>8)&0x0ff;	
 
 //delt_pulse_count=W_delt*((int)Modbus_pulse.target_totall_pulse/Target);
-		delt_pulse_count=(float)W_delt*((float)Modbus_pulse.target_totall_pulse/(float)Target);
+		
 	
-		if(weight_sig)delt_pulse_count=0;
+		
 	
 		delt_pulse_string_modbus[0]=0x0b;
 		delt_pulse_string_modbus[1]=0x06;
@@ -1489,16 +1509,40 @@ void delt_pulse(int weight_sig,int W_delt)
 		delt_pulse_string_modbus[6]=px&0x0ff;					             
 		delt_pulse_string_modbus[7]=(px>>8)&0x0ff;	
 	
-	USART2_DE_high;
-	 for(i=0;i<8;i++)
-		{	USART_SendData(USART1,delt_pulse_string_modbus[i]);
-			USART_SendData(USART2,delt_pulse_string_modbus[i]);
-			while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
-			while(USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
-		}
-		Delay(10000);
-		USART2_DE_lowx;
+
+	//	Delay((u32)100*delt_pulse_count);
 		FIN=1;
+}
+void send_302()
+{
+		unsigned int px;
+		unsigned long int weigth;
+	
+		F302_Fram[0]=Comm_Addr;
+		F302_Fram[1]=0x03;
+		F302_Fram[2]=0x04;
+		
+		//F302_Fram[3]=Modbus_weight.long_weight[0];
+		//F302_Fram[4]=Modbus_weight.long_weight[1];;
+		//F302_Fram[5]=Modbus_weight.long_weight[2];
+		//F302_Fram[6]=Modbus_weight.long_weight[3];
+	
+	
+		weigth=(unsigned long int)Modbus_weight.weight_long;
+		weigth*=pow(10,4-Cal_point);
+	
+		F302_Fram[3]=(weigth>>24)&0x0ff;
+		F302_Fram[4]=(weigth>>16)&0x0ff;
+		F302_Fram[5]=(weigth>>8)&0x0ff;
+		F302_Fram[6]=weigth&0x0ff;
+	
+		px=mtb_crc_calc((unsigned char *)delt_pulse_string_modbus,7);
+		F302_Fram[7]=px&0x0ff;					             
+		F302_Fram[8]=(px>>8)&0x0ff;	
+	
+
+	//	Delay((u32)100*delt_pulse_count);
+		F302=1;
 }
 
 // if (FIN)

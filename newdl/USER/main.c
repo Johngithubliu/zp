@@ -72,6 +72,9 @@ extern char ADC_STAB;
 extern int Weighting_T,Weighting_package,Weighting_even;//称重_吨位，袋数，平均值
 extern float Cal_user_weight;//标定用户砝码重量
 
+extern unsigned char F302;
+extern unsigned char F302_Fram[];
+
 char Initial_zero_flag;
 int Eliminate_zero_point,Eliminate_zero_delay;
 
@@ -525,8 +528,8 @@ while(1)
 #endif
 
 #ifdef Com_DMA_Rx_and_Tx
-    state_operation=-1;
-//    state_operation=1;
+//    state_operation=-1;
+    state_operation=1;
 
  	RCC_Configuration();
 //	USART1_Config();
@@ -671,16 +674,18 @@ USART3_DE_lowx;
 //			Recover_para();
 //verify_filter_ADCODE();
  if (FIN)
- 	{/*
-	 for(i=0;i<12;i++)
-		{	USART_SendData(USART2,sig_pulse_string_modbus[i]);
+ 	{		
+		USART2_DE_high;
+		for(i=0;i<8;i++)
+		{
+			USART_SendData(USART2,delt_pulse_string_modbus[i]);
+			
 			while(USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
 		}
-
-	 for(i=0;i<12;i++)
-		{	USART_SendData(USART2,delt_pulse_string_modbus[i]);
-			while(USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
-		}*/
+		
+		Delay(4000);
+		
+		USART2_DE_lowx;
 	   FIN=0;
 	}
 
@@ -691,7 +696,18 @@ else
 			while(USART_GetFlagStatus(UART4, USART_FLAG_TXE) == RESET);
 		}
 	}
-
+	 
+	if (F302)
+ 	{		
+		for(i=0;i<9;i++)
+		{	
+			USART_SendData(USART1,F302_Fram[i]);
+			
+			while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
+			
+		}
+		F302=0;
+	}
 //	 Reply_pc_inquier();
 
 

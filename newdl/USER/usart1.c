@@ -593,7 +593,7 @@ NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 int fputc(int ch, FILE *f)
 {
 	/* 将Printf内容发往串口 */
-	USART_SendData(USART1, (unsigned char) ch);
+	//USART_SendData(USART1, (unsigned char) ch);
 	while( USART_GetFlagStatus(USART1,USART_FLAG_TC)!= SET);	
 	return (ch);
 }
@@ -1898,8 +1898,8 @@ void USART1_Process(void)
 										len+=2;
 										for(i=0;i<len;i++)
 										{
-											USART_SendData(USART1,*(p++));
-											while( USART_GetFlagStatus(USART1,USART_FLAG_TC)!= SET);
+										//	USART_SendData(USART1,*(p++));
+										//	while( USART_GetFlagStatus(USART1,USART_FLAG_TC)!= SET);
 										}
 									} //ok
 							    else
