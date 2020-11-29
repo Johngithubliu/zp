@@ -1,6 +1,6 @@
 
 //pulse_setting
-//v39+++
+//v40
 //copyright by John
 //2015.07.12
 
@@ -1779,7 +1779,7 @@ void run_active_u_d(unsigned long pulse_l)
 	if(speed4)n3=65535-2500*8/speed4;//debug used as last slow speed
 	else n3=0;
 	
-	pulse_l*=10;
+	pulse_l*=100;
 	real_up=up;//add @20150531
 	if(pulse_l<real_up*2)
 	{
