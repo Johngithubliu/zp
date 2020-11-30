@@ -636,6 +636,7 @@ void Teating_weight_Random_output(void)
 		if (Modbus_weight.weight_long>=Delt_temp)
 		    {Random_output;}
 }
+unsigned int pulse_delay;
 void process_feed_material(void)
 { unsigned char *px,i;
 //int frezen_AD_DISPLAY_DELAY_TIMER;
@@ -934,8 +935,12 @@ void process_feed_material(void)
 //										FIN=1; 
 										delt_pulse_count=(float)(Delt_temp-Modbus_weight.weight_long)*((float)Modbus_pulse.target_totall_pulse/(float)Target);
 										delt_pulse();
-										//c_t100=Delay_Pre_process+delt_pulse_count/50;
-										c_t100=Delay_Pre_process;
+										if(no_recive_x_signals>100)no_recive_x_signals=100;
+										if(no_recive_x_signals<5)no_recive_x_signals=5;
+										pulse_delay=Delay_Pre_process+delt_pulse_count/no_recive_x_signals;
+										if(pulse_delay>120)pulse_delay=120;
+										c_t100=pulse_delay;
+										//c_t100=Delay_Pre_process;
 										auto_t100=0;state_operation=9;
 //									  break;
 									}
@@ -1487,16 +1492,7 @@ void delt_pulse()
 {
 		int px;
 		int i;;
-	//0    1    2    3    4    5    6    7    8
- //sig_pulse_string_modbus[8]=  weight_sig;
- // 								px=mtb_crc_calc((unsigned char *)sig_pulse_string_modbus,9);
-		//						sig_pulse_string_modbus[9]=px&0x0ff;					             
-			//					sig_pulse_string_modbus[10]=(px>>8)&0x0ff;	
 
-//delt_pulse_count=W_delt*((int)Modbus_pulse.target_totall_pulse/Target);
-		
-	
-		
 	
 		delt_pulse_string_modbus[0]=0x0b;
 		delt_pulse_string_modbus[1]=0x06;
