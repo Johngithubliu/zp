@@ -1,6 +1,6 @@
 
 //pulse_setting
-//v40
+//v42
 //copyright by John
 //2015.07.12
 
@@ -321,6 +321,7 @@ void main(void)
 //--------------- Main Loop -------------------------------------------------
     delay_nms(100);
 		find_z();
+		pulse_active=0;
 		for( ;; )
     {
         ( void )eMBPoll(  );
@@ -918,7 +919,7 @@ void forward()
 
 	n1=65535-2500*8/max_speed;
 	
-	if(debug>2000)debug=2000;
+	if(debug>1500)debug=1500;
 	if(debug<0)debug=0;
 
 	if(debug)n2=65535-2500*8/debug;//debug used as last slow speed
@@ -1075,16 +1076,18 @@ void forward()
 			TH0=shadow_th0;
 			TL0=shadow_tl0;
 			TR0=1;
-			for(i=0;i<50;i++)
-			{
+			//for(i=0;i<50;i++)
+			//while(1)
+			//{
 				pulse=0x0ffff;
 				while(pulse)//wait down finishi
 				{
+					pulse=0x0ffff;
 					READP0;
 					if(TOC2)
 					{TR0=0;pulse=0;break;};	
 				}
-			}		
+			//}		
 		}
 //add slowest speed if speed4!=0		
 		if(n3)
@@ -1095,16 +1098,18 @@ void forward()
 			TH0=shadow_th0;
 			TL0=shadow_tl0;
 			TR0=1;
-			for(i=0;i<10;i++)
-			{
+			//for(i=0;i<10;i++)
+			//while(1)
+			//{
 				pulse=0x0ffff;
 				while(pulse)//wait down finishi
 				{
+					pulse=0x0ffff;
 					READP0;
 					if(TOC1)
 					{TR0=0;pulse=0;return;};	
 				}
-			}		
+			//}		
 		}
 
 }
@@ -1824,7 +1829,7 @@ void run_active_u_d(unsigned long pulse_l)
 			{
 				if(!pulse){i=15;TR1=0;break;}
 			};
-			if(curver_1u[i]<n2)
+			if(curver_1u[i]<n3)
 			{//TH0=curver_1u[i];
 				shadow_tl0=curver_1u[i]&0x0ff;
 				shadow_th0=curver_1u[i]>>8;	
@@ -1832,8 +1837,8 @@ void run_active_u_d(unsigned long pulse_l)
 			}
 			else 
 			{//TH0=n1;
-				shadow_tl0=n2&0x0ff;
-				shadow_th0=n2>>8;
+				shadow_tl0=n3&0x0ff;
+				shadow_th0=n3>>8;
 			
 			
 			}
