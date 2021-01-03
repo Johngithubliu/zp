@@ -34,7 +34,7 @@ int Target_uper_limt;//参数定量上限
 int Target_down_limt;//参数定量下限
 int zero_range;//参数零区
 int Slow_feed_modify;//参数慢加修正量
-int Initial_power_value;//参数初上电值
+int Initial_power_value;//参数初上电值,P32
 int Initial_feed_value;//参数初加量
 int Random_setting_value;//参数随机设定值
 
@@ -73,7 +73,7 @@ int Strong_Filter2;//参数滤波强度2
 int Strong_Filter3;//参数滤波强度3
 int Strong_Filter4;//参数滤波强度4
 //称重_吨位，袋数，平均值
-int Weighting_T,Weighting_package,Weighting_even;
+unsigned long int Weighting_T,Weighting_package,Weighting_even;
 
 int Experiment_write_para;
 

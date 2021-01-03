@@ -40,7 +40,7 @@ void USART1_REMAP_Config(void);
 
 
 int fputc(int ch, FILE *f);
-int read_com1(void);
+
 void USART1_Process(void);
 void USART2_Process(void);
 void USART3_Process(void);

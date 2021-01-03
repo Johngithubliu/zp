@@ -13,8 +13,11 @@ const u8 TEXT_Buffer[]={"STM32 FLASH TEST"};
 #define AD_ZEROX  Step_para +1024
 #define AD_COFFX  AD_ZEROX +10
 
-#define FL_Weighting_T  AD_COFFX +10
-#define FL_Weighting_package  FL_Weighting_T +10
+//#define FL_Weighting_T  AD_COFFX +10
+//#define FL_Weighting_package  FL_Weighting_T +10
+
+#define FL_Weighting_package  AD_COFFX +10
+#define FL_Weighting_T  FL_Weighting_package +10
 
 // //1.通讯数据组
 //#define  FF_ID_budrate  FL_Weighting_package+4//参数波特率关联号

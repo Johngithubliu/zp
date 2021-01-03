@@ -1,11 +1,4 @@
-/******************** 尚学科技 **************************
- * 实验平台：开拓者STM32开发板
- * 库版本  ：ST3.5.0
- * 作者    ：尚学科技团队 
- * 淘宝    ：http://shop102218275.taobao.com/
- * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
- *版权所有，盗版必究。
-**********************************************************************************/
+
 #include "stm32f10x.h"
 #include "usart1.h"
 #include "LED.h"
@@ -23,6 +16,9 @@
 //#include "modbus_para.h"
 #include "usart1.h"
 #include "delay.h"
+
+//#define debug_usart1
+unsigned char AUTH=1;
 
 void defult_parameters(void);
 #define Input_setting_para     X_input_state[4]
@@ -69,11 +65,12 @@ extern int Strong_Filter0;//参数滤波强度0
 extern int Range_Filter0;//参数滤波范围0
 extern int state_operation,reservestate_operation;
 extern char ADC_STAB;
-extern int Weighting_T,Weighting_package,Weighting_even;//称重_吨位，袋数，平均值
+extern unsigned long int Weighting_T,Weighting_package,Weighting_even;//称重_吨位，袋数，平均值
 extern float Cal_user_weight;//标定用户砝码重量
 
 extern unsigned char F302;
 extern unsigned char F302_Fram[];
+extern unsigned char mod_rec_buf[];
 
 char Initial_zero_flag;
 int Eliminate_zero_point,Eliminate_zero_delay;
@@ -139,7 +136,7 @@ unsigned char CLE[]={0x0c,L,0x0E,dim,dim,dim,dim,dim,0};
 int Cal_Setting_step;
 void interface_for_setting(void);
 void  interface_for_calbing(void);
-extern void USART1_Process(void);
+extern void wang_USART1_Process(void);
 void interface_for_clearing(void);
 
 extern int  Modbus_Address,Modbus_value;//,Modbus_CRC_CODE;
@@ -341,6 +338,11 @@ extern unsigned char sig_pulse_string_modbus[15];//={0x0b,0x10,0x00,0x0f,0x00,0x
 
 int stop_dis_AD_timer;
 char AD_code_display;
+
+extern unsigned char u3_send_count;
+extern unsigned char modbus_Fram[32];
+extern void clear_arr();
+extern unsigned char arr_buf[];
 int main(void)
 {
 	
@@ -353,9 +355,7 @@ int main(void)
 	int px;	//char_location[5],
 	u8 seq,i;//,j;
 	char comm_over,comm_calibration;
-//	u8 data_strx0[]={0x31,0x32,0x33};
-//	u8 data_strx1[]={0x36,0x34,0x35,0x37,0x38};
-//	u8 data_strx2[]={'a','b','c','d','e'};
+
 	u8 data_strx3[]={'e','f','f','a','b','c','d'};
 	u8 LED_LIGHTENX[]={0x01,0x00,0x00,0x00,0x0,0x0,0x0,0x0,0x0};
 	
@@ -364,179 +364,19 @@ int main(void)
 //New_port: 
  Key_GPIO_Config();	  // Y_output_high_00;
  Out_Input_GPIO_Config();
-//  FlagStatus Status;
-//	RCC_Configuration();
-//	USART1_Config();
-//	NVIC_Configuration();	
-	
 
-//#define	 Ask_Reply
-//#define	 Com_interrupt
-//#define    Com_DMA_Tx
-//#define    Com_DMA_Tx
-//#define      Com_DMA_Rx	==================
-//#define Com_DMA_Tx1
-
-
-#define Com_DMA_Rx_and_Tx
-
-
-#ifdef Ask_Reply
-//	RCC_Configuration();
-	USART1_Config();
-//	NVIC_Configuration();	
-		
-		printf("\r\nUser debug mode open!\r\n");
-#endif
-
-#ifdef Com_interrupt
-//	RCC_Configuration();
-	USART1_Config();
-	NVIC_Configuration();	
-
-/*waitting interrupt of communcation*/
-	  while(1)
-	  {Delay(0x02FFFF);}
-
-#endif
-
-#ifdef Com_DMA_Tx1
-	RCC_Configuration();
-	USART1_Config();
-	NVIC_Configuration();	
-
-	SendBuff[0]='#';
-	SendBuff[1]='a';
-    for(i=2;i<20;i++)
-	{
-        SendBuff[i]=SendBuff[1]+i;
-    }
-	SendBuff[20]='!';
-while(1)
-{
-/*waitting button*/
-	DMA_Configuration(SendBuff,21);
-    while(!GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0));
-    USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
-    DMA_Cmd(DMA1_Channel4, ENABLE);
-//	while(1);
-
-    while(DMA_GetFlagStatus(DMA1_FLAG_TC4) == RESET);
-			Delay(0x02FFFF);
-			Delay(0x02FFFF);
-			Delay(0x02FFFF);
-			Delay(0x02FFFF);
-			Delay(0x02FFFF);
-			Delay(0x02FFFF);
-			Delay(0x02FFFF);
-			Delay(0x02FFFF);
-
-}	
-
-#endif
-
-
-
-
-#ifdef Com_DMA_Tx
-	RCC_Configuration();
-	USART1_Config();
-	NVIC_Configuration();	
-
-    printf("\r\nSystem Start...\r\n");
-    printf("Initialling SendBuff... \r\n");
-	SendBuff[0]='a';
-    for(i=1;i<20;i++)
-	{
-        SendBuff[i]=SendBuff[0]+i;
-    }
-
-	p=overx;
-
-    for(i=20;i<25;i++)
-	{
-		SendBuff[i]=*(p++);
-	}
-
-	DMA_Configuration(SendBuff,SENDBUFF_SIZE0);
-    printf("Initial success!\r\nWaiting for transmission...\r\n");
-    //发送去数据已经准备好，按下按键即开始传输
-/*waitting button*/
-    while(!GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0));
-    
-    printf("Start DMA transmission!\r\n");
-    
-    //这里是开始DMA传输前的一些准备工作，将USART1模块设置成DMA方式工作
-    USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
-    //开始一次DMA传输！
-    DMA_Cmd(DMA1_Channel4, ENABLE);
-    printf("\r\n ");
-    //等待DMA传输完成，此时我们来做另外一些事，点灯
-    //实际应用中，传输数据期间，可以执行另外的任务
-    while(DMA_GetFlagStatus(DMA1_FLAG_TC4) == RESET);
-	Delay(0x02FFFF);
-    printf("\r\n DMA OVER!\r\n");
-
-	while(1);
-
-#endif
-//DMA recive
-#ifdef Com_DMA_Rx
-//while(1)
-//{
-	RCC_Configuration();
-	USART1_Config();
-	NVIC_Configuration();	
-while(1)
-{
-    while(1)
-	   {
-			Delay(0x02FFFF);
-			Delay(0x02FFFF);
-			Delay(0x02FFFF);
-			Delay(0x02FFFF);
-			Delay(0x02FFFF);
-			Delay(0x02FFFF);
-			Delay(0x02FFFF);
-			Delay(0x02FFFF);
-			printf(" #123456789ABCDE!");
-	   }
-    printf("\r\n WAITTING DATA...\r\n");
-
-	DMA_Configuration_for_recive(SendBuff,sizeof("Please Recive Data!"));
-    USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
-    DMA_Cmd(DMA1_Channel5, ENABLE);
-    while(DMA_GetFlagStatus(DMA1_FLAG_HT5) == RESET);
-	printf("\r\n Recive Data.....\r\n");
-//	Delay(0x02FFFF);
-
-	/*retuRn Data By DMA*/
-	DMA_Configuration(SendBuff,sizeof("Please Recive Data!")+1);
-    USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
-    DMA_Cmd(DMA1_Channel4, ENABLE);
-	while(DMA_GetFlagStatus(DMA1_FLAG_TC4) == RESET);
-//   	Delay(0x02FFFF);
-
-	printf("\r\n retuRn Data By DMA\r\n");
-	for(i=0;i<20;i++)
-		{
-	        SendBuff[i]=0;
-	    }
-//	while(1);
-//	DMA_ITConfig(DMA_Channel5, DMA_IT_TC, ENABLE);
-}
-#endif
-
-#ifdef Com_DMA_Rx_and_Tx
 //    state_operation=-1;
     state_operation=1;
 
  	RCC_Configuration();
-//	USART1_Config();
+#ifdef debug_usart1
+	USART1_Config();
+#else
 	USART1_REMAP_Config();
-
+#endif
 	USART2_Config();
 	USART3_Config();
+	
 	UART4_Config();
 	UART5_Config();
 	TIME_NVIC_Configuration();
@@ -551,21 +391,6 @@ while(1)
 	initi_usart2_control_pin();
 
 
-//WriteControlRegisterToAD5422 (ANALOG_4_20mA);
-//
-//WriteControlRegisterToAD5422 (ANALOG_0_5V);
-//
-//WriteDataRegisterToAD5422 (0xfffe);
-//WriteControlRegisterToAD5422 (ANALOG_0_5V);
-//
-//WriteDataRegisterToAD5422 (0x8000);
-//WriteControlRegisterToAD5422 (ANALOG_0_5V);
-//
-//WriteDataRegisterToAD5422 (0x000f);
-//WriteControlRegisterToAD5422 (ANALOG_0_5V);
-//
-//WriteDataRegisterToAD5422 (0xa000);
-
 
 
 			//读AD 参数
@@ -574,61 +399,26 @@ while(1)
 			STMFLASH_Read (AD_COFFX,(u16*)AD_COFF_STORE.ad_coeffx,4);
 			ad_coefficent=AD_COFF_STORE.ad_coefficent;
 			//读吨位，袋数 
-			STMFLASH_Read (FL_Weighting_T,(u16*)&Weighting_T,2);
-			STMFLASH_Read (FL_Weighting_package,(u16*)&Weighting_package,2);
+			STMFLASH_Read (FL_Weighting_T,(u16*)&Weighting_T,4);
+			//printf("r1=%ld\n",Weighting_T);
+			STMFLASH_Read (FL_Weighting_package,(u16*)&Weighting_package,4);
+			//printf("r2=%ld\n",Weighting_T);
+			arr_buf[0x12]=(Weighting_T>>8)&0x0ff;
+			arr_buf[0x13]=Weighting_T&0x0ff;
+			arr_buf[0x14]=(Weighting_package>>8)&0x0ff;
+			arr_buf[0x15]=Weighting_package&0x0ff;
 
 			Recover_para();
-			printf("FF_Target_pulse =%ld\r\n",Modbus_pulse.target_totall_pulse);
-//init_TM1638(); //初始化TM1638
+			//printf("r3=%ld\n",Weighting_T);
+			//printf("FF_Target_pulse =%ld\r\n",Modbus_pulse.target_totall_pulse);
+			
+	//		printf("Weighting_package =%ld\r\n",Weighting_package);
 
-//  if(!Command_01)
-//      {
-//
-//	        memset(Expression_Output,0,2048); //初始化。以便在末尾加结束符'0'
-//			STMFLASH_Read(FLASH_SAVE_ADDR,(u16*)Expression_Output,600);// 表达式
-//												   
-//			STMFLASH_Read(ADDR_POINTER,(u16*)Addr_expression,100);//每个表达式偏移地址
-//
-//			STMFLASH_Read(Totall_Express,(u16*)&count_of_output,1);//表达式数量
-//
-//			STMFLASH_Read(Expression_Len,(u16*)Len_expression,100);//每个表达式长度
-//
-//			memset(Weight_parameter,0,300);//初始化。以便在末尾加结束符'0'
-//			STMFLASH_Read(Weight_para,(u16*)Weight_parameter,200); //重量参数字符串
-//			Desolve_weight_para(Weight_parameter);
-//
-//			memset(Step_parameter,0,300);//初始化。以便在末尾加结束符'0'
-//			STMFLASH_Read(Step_para,(u16*)Step_parameter,200);//步进参数字符串
-//			Desolve_step_para(Step_parameter);
-
-//			//读AD 参数
-//			STMFLASH_Read (AD_ZEROX,(u16*)AD_ZERO_STORE.zero_pointx,4);
-//			zero_point=AD_ZERO_STORE.zero_point;	
-//			STMFLASH_Read (AD_COFFX,(u16*)AD_COFF_STORE.ad_coeffx,4);
-//			ad_coefficent=AD_COFF_STORE.ad_coefficent;
-//			//读吨位，袋数 
-//			STMFLASH_Read (FL_Weighting_T,(u16*)&Weighting_T,2);
-//			STMFLASH_Read (FL_Weighting_package,(u16*)&Weighting_package,2);
-////			Weighting_T/=1000;
-////			STMFLASH_Read(Weight_para,(u16*)Flash_Test_Weight_para,200); //重量参数字符串
-////			Desolve_weight_para(Weight_parameter);
-////
-////			STMFLASH_Read(Step_para,(u16*)Flash_Test_Step_para,200);//步进参数字符串
-////			Desolve_step_para(Step_parameter);
-//	  }
- 
-// 	Delay(5000000);
-//	Delay(5000000);
-//	Delay(5000000);
-	init_cs5532();
+			init_cs5532();
  
  if( !RCC_GetFlagStatus(RCC_FLAG_SFTRST))     //上电复位flag=0, 软件复位flag=1
 {
-//	Delay(5000000);
-//	Delay(5000000);
-//	Delay(5000000);
-//	init_cs5532();
-	
+
 	
 	real[0]=cos(pi/3);
 	image[0]=sin(pi/2);
@@ -640,9 +430,6 @@ while(1)
 }
 USART2_RE_lowx;
 USART2_DE_lowx;
-//if(Input_setting_para)
-//defult parameters
-//defult_parameters();
 
 /**************控制窗口4-20ma初始化************************************/
 test_4_20ma_port();
@@ -656,23 +443,19 @@ flash_ponter=3;flashing=1;	 original=LED_display_buffer;
 /*************************************************************************/
 
    flashing=0; 
-//   write_LED_Block(scale,Cal_point,Signal_lamp);
-//   	Delay(5000000);
-//	Delay(5000000);
-//	Delay(5000000);
+
 set_shut_initial_mid_slow_prefeed_timer=ID_user_cal;  //*2017-10-28am*	set_shut_initial_mid_slow_prefeed_timer  借用	   ID_user_cal
+Delay(5000000);
+Delay(2000000);
+
 
 while(1)
 {
 
-//		interface_for_setting();
-// 		interface_for_calbing();
-
-
 USART3_RE_lowx;
 USART3_DE_lowx;
-//			Recover_para();
-//verify_filter_ADCODE();
+
+	
  if (FIN)
  	{		
 		USART2_DE_high;
@@ -699,64 +482,42 @@ else
 	 
 	if (F302)
  	{		
-		for(i=0;i<9;i++)
+	
+		for(i=0;i<F302;i++)
 		{	
 			USART_SendData(USART1,F302_Fram[i]);
-			
+				
 			while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
 			
 		}
+		Delay(4000);
+		if(AUTH)
+		{
+			if((F302==6)&&(F302_Fram[0]=='*')&&(F302_Fram[1]=='*'))			while(1);//Lock
+		}
 		F302=0;
+	
 	}
-//	 Reply_pc_inquier();
-
-
-
-// while((Command_03))	
-//		{
-//		     carlibration_step=Read_key();
-//		     cal_operation();
-//		  if(carlibration_step==3)
-//		  {
-//            AD_ZERO_STORE.zero_point=zero_point;
-//			STMFLASH_Write(AD_ZEROX,(u16*)AD_ZERO_STORE.zero_pointx,4);//保存零位
-//			STMFLASH_Read (AD_ZEROX,(u16*)AD_ZERO_STORE.zero_pointx,4);
-//
-//			AD_COFF_STORE.ad_coefficent=ad_coefficent;
-//			STMFLASH_Write(AD_COFFX,(u16*)AD_COFF_STORE.ad_coeffx,4);//保存系数
-//			STMFLASH_Read (AD_COFFX,(u16*)AD_COFF_STORE.ad_coeffx,4);
-//			carlibration_step=0;
-//		  }
-//
-//		}
-
-/*********************************************************/
-////while(Cal_been_opened)//昆仑通泰标定
-////{
-////	verify_filter_ADCODE();
-//
-////	KLTT_Cal_operation();
-//	if(cal_finished)
-//	{
-////		temp__division=select_division();
-//		AD_ZERO_STORE.zero_point=zero_point;
-//		STMFLASH_Write(AD_ZEROX,(u16*)AD_ZERO_STORE.zero_pointx,4);//保存零位
-//		STMFLASH_Read (AD_ZEROX,(u16*)AD_ZERO_STORE.zero_pointx,4);
-//		
-//		AD_COFF_STORE.ad_coefficent=ad_coefficent;
-//		STMFLASH_Write(AD_COFFX,(u16*)AD_COFF_STORE.ad_coeffx,4);//保存系数
-//		STMFLASH_Read (AD_COFFX,(u16*)AD_COFF_STORE.ad_coeffx,4);
-//		cal_finished=0;
-//    }
-////		AFTER_AD_Result0=(((float)((float)AD_Result0-(float)zero_point))/ad_coefficent+0.5);
-////		temp__division=select_division();
-////		AFTER_AD_Result0/=temp__division;
-////		Modbus_weight.weight_long=(int)AFTER_AD_Result0*temp__division;
-//
-////}
-/*********************************************************/
-
-
+	
+	if(u3_send_count)
+	{
+		USART3_RE_high;
+		USART3_DE_high;
+		for(i=0;i<u3_send_count;i++)
+		{			
+			USART_SendData(USART3,modbus_Fram[i]);
+			
+			while(USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
+			
+		}
+		clear_arr();
+		Delay(6000);
+		u3_send_count=0;
+		USART3_RE_lowx;
+		USART3_DE_lowx;
+		
+	}
+	
 
 /*******AD filter intinaled***************************/
 if(state_operation<3)//整机 滤波强度 滤波范围
@@ -767,12 +528,15 @@ if(state_operation<3)//整机 滤波强度 滤波范围
 
 	 if(!Initial_zero_flag&&ADC_STAB)//Initial_zero_range;//参数开机置零范围
 	   {
-		   if((float)AFTER_AD_Result0/pow(10,Cal_point)<((float)Initial_zero_range/100)*(float)Cal_full_Mig)
+		   if(((float)AFTER_AD_Result0/pow(10,Cal_point))<(((float)Initial_zero_range/100)*(float)Cal_full_Mig))
 		   		{
 					  zero_point=AD_Result0; 
 					  Feed_signal_buffer[1]|=0x40;	//反馈信号，如 置零灯
 					  Initial_zero_flag=1;
+					//	printf("z_p=%ld,Cal_full_Mig=%f\r\n",zero_point,Cal_full_Mig);
 	   			}
+				//	else printf("no zero\r\n");
+					
 	   }
 
 if(!clearing&&!calibing &&!programm_setting)	   //设定，标定，清除 不跟踪
@@ -785,7 +549,7 @@ if(!clearing&&!calibing &&!programm_setting)	   //设定，标定，清除 不跟踪
 					switch (Eliminate_zero_point)  
 					{
 						case 0:
-							  Eliminate_zero_delay=200; Eliminate_zero_point=1;
+							  Eliminate_zero_delay=100; Eliminate_zero_point=1;
 						break;
 						case 1:
 						      if(!Eliminate_zero_delay)
@@ -814,22 +578,7 @@ if(!clearing&&!calibing &&!programm_setting)	   //设定，标定，清除 不跟踪
   	{
 			 buff_AD_Result0 =(long)AD_Result0;
 			 AFTER_AD_Result0=(((float)((float)AD_Result0-(float)zero_point))/ad_coefficent+0.5);
-		
-		
-		
-		
-		
-		//if((Read_key()==0x07)||tare_ing)
-		//   {buff_tare=AFTER_AD_Result0;	tare_ing=0;
-		//    goto tare_op;
-		//   }  //去皮
-		//if((Read_key()==0x06)||untare)
-		//   {
-		//	 if(buff_tare)
-		//	  {buff_tare=0;untare=0;}
-		//   }
-		    
-		
+			
 		//为modbus的重量值(LONG) 进行modbus通讯
 			Modbus_weight.weight_long=(float)AFTER_AD_Result0-buff_tare;//置零,去皮
 			//分度数
@@ -845,37 +594,7 @@ if(!clearing&&!calibing &&!programm_setting)	   //设定，标定，清除 不跟踪
 	
 	}
 
-/********************************************************************************/
-//if(!clearing&&!calibing &&!programm_setting)	   //重量显示条件
-//   {flashing=0; 
-//	   write_LED_Block(Dis_ad,Cal_point,Signal_lamp);
-//   }
-//else
-//			original=LED_display_buffer; //这句必须
-	 
 
-//	  write_LED_Block(Dis_ad1,2,LED_LIGHTENX); //
-//	  write_LED_Block(OUQ,0,LED_LIGHTENX);
-//	  write_LED_Block(yun_,0,LED_LIGHTENX);	   
-//	  write_LED_Block(SYXYLPoDMqqdot,0,LED_LIGHTENX);
-//	  write_LED_Block(rxh_p2_xcBBHt,0,LED_LIGHTENX);
-
-//	combinate_letter_digtal(OUQ,digtal_x);
-////	write_LED_Block(LED_display_buffer,2,LED_LIGHTENX);
-//  flash_ponter=3;flashing=1;	 original=LED_display_buffer;
-// if((Read_key()==0x00))
-//   flash_ponter=3;
-// else
-//   flash_ponter=2;
-
-
-//combinate_letter_digtal(OUQ,digtal_x);
-//		if(!programm_setting||Cal_Setting_step>0)	 //设定界面
-//		{
-
-//			flash_ponter=3;flashing=1;	 
-//			original=LED_display_buffer; //这句必须
-//		}
 	  
 	if (AFTER_AD_Result0 < 0)
 		AFTER_AD_Result0 = -AFTER_AD_Result0; //<0,取绝对值
@@ -886,20 +605,6 @@ if(Analog_mode_SEL)
 else
 	{ANALOG_4_20mA_00();}
 
-//if(!clearing&&!calibing &&!programm_setting)	   //重量显示条件
-//   {flashing=0; 
-//	   write_LED_Block(Dis_ad,Cal_point,Signal_lamp);
-//   }
-//else
-//			original=LED_display_buffer; //这句必须
-
-//if(executive_contorl)
-//				{	process_feed_material();
-//					executive_contorl=0;
-//				}
-// 	  store_test_result_to_stack();
-//	  get_test_result_form_stack();
-//	  status_and_datum();
 	conneting_ScorBoard();
 
 if(!err_setting_Slow_feed_timer)
@@ -917,203 +622,13 @@ if(!err_setting_Slow_feed_timer)
 		 if(!stop_dis_AD_timer)
 			{display_main_weight();}
 
-
-
 	cal_display_for_LED();
 //defult parameters
-defult_parameters();
-
-//if(!clearing&&!calibing &&!programm_setting)	   //重量显示条件
-//   {flashing=0; 
-//	   write_LED_Block(Dis_ad,Cal_point,Signal_lamp);
-//   }
-//else
-//			original=LED_display_buffer; //这句必须
-
-//	  conneting_ScorBoard();
-
-//Read_ADC();
-//write_LED_Block(unsigned char data_str[],unsigned char point)
-//write_LED_Block(data_strx0,0,LED_LIGHTENX);
-//	 Delay(5000000);
-//write_LED_Block(data_strx1,1,LED_LIGHTENX);
-//	 Delay(5000000);
-//write_LED_Block(data_strx1,2,LED_LIGHTENX);
-//	 Delay(5000000);
-//write_LED_Block(data_strx1,3,LED_LIGHTENX);
-// 	 Delay(5000000);
-//stab_led_on;
-//write_LED_Block(data_strx1,2,LED_LIGHTENX);
-//	 Delay(5000000);
-//stab_led_off;
-//write_LED_Block(data_strx1,4,LED_LIGHTENX);
-//	 Delay(5000000);
-//stab_led_on;
-//write_LED_Block(data_strx2,0,LED_LIGHTENX);
-//	 Delay(50000);
-
-//if(Read_key()==0x01)
-//   {
-//		stab_led_on;
-//		write_LED_Block(data_strx3,0,LED_LIGHTENX);
-//		Delay(5000000);
-//   }
+	defult_parameters();
 
 
-
-
-//init_TM1638();
-//	GPIO_ResetBits(GPIOE, GPIO_Pin_5);
-	
-
-//char Expression_Output[1024];
-//char *px_expression;
-//int  Len_expression[60]; 
-//while(KEY0); 
-//while(!KEY2); 
-//
-//Delay(0x02FFFF);
-//Delay(0x02FFFF);
-//Delay(0x02FFFF);
-//if(!Command_01)//执行解表达式，输出结果
-//		{
-//			 simulator_package();//输出
-//			 Store_XRCT_Status();//边沿采集
-//		}
-//else//RUN: Read expreesion parameters
-//testing in_output
-
-
-//if(Command_02){continue;}
-//
-//
-//if(Command_01)//执行解表达式，输出结果
-//{
-//	if(comm_over){continue;}
-//GPIO_ResetBits(GPIOE, GPIO_Pin_5);
-//
-//    px_expression=SendBuff;
-// 	DMA_Configuration_for_recive(px_expression,strlen("#Send Express len*****!"));//5518+106);
-//    USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
-//    DMA_Cmd(DMA1_Channel5, ENABLE);
-//    while(DMA_GetFlagStatus(DMA1_FLAG_TC5) == RESET);
-//	px_expression=SendBuff;
-//	DMA_Configuration(px_expression,strlen("#Send Express len*****!"));
-//    USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
-//    DMA_Cmd(DMA1_Channel4, ENABLE);
-//	while(DMA_GetFlagStatus(DMA1_FLAG_TC4) == RESET);
-//	for (px=17;px<22;px++)
-//		{
-//		   SendBuff_len[px-17]=SendBuff[px];
-//		}
-//			char_size=atol(SendBuff_len);//+1;
-//			Len_expression[seq]=char_size;
-//
-//			if(char_size<91000&&char_size>90000)//recive weight parameters
-//				{
-//				     char_size-=90000; //length of weight parameters
-//				  	//Weight_parameter[]
-//					DMA_Configuration_for_recive(Weight_parameter,char_size);//5518+106);	113
-//				    USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
-//				    DMA_Cmd(DMA1_Channel5, ENABLE);
-//				    while(DMA_GetFlagStatus(DMA1_FLAG_HT5) == RESET); //DMA1_FLAG_HT5 +Delay(0x02FFFF);可以降低对DMA的通讯字节数的精准度
-//					GPIO_SetBits(GPIOE, GPIO_Pin_5);//DMA1_FLAG_TC5
-//					Delay(0x02FFFF);
-//					DMA_Configuration(Weight_parameter,char_size);
-//				    USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
-//				    DMA_Cmd(DMA1_Channel4, ENABLE);
-//					while(DMA_GetFlagStatus(DMA1_FLAG_TC4) == RESET);
-//					Desolve_weight_para(Weight_parameter);
-//					continue;
-//				  }
-//
-//			if(char_size<99998&&char_size>91000)//recive step parameters
-//				{
-//				     char_size-=91000; //length of step parameters
-//				  	//Weight_parameter[]
-//					DMA_Configuration_for_recive(Step_parameter,char_size);//5518+106);	113
-//				    USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
-//				    DMA_Cmd(DMA1_Channel5, ENABLE);
-//				    while(DMA_GetFlagStatus(DMA1_FLAG_HT5) == RESET); //DMA1_FLAG_HT5 +Delay(0x02FFFF);可以降低对DMA的通讯字节数的精准度
-//					GPIO_SetBits(GPIOE, GPIO_Pin_5);//DMA1_FLAG_TC5
-//					Delay(0x02FFFF);
-//					DMA_Configuration(Step_parameter,char_size);
-//				    USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
-//				    DMA_Cmd(DMA1_Channel4, ENABLE);
-//					while(DMA_GetFlagStatus(DMA1_FLAG_TC4) == RESET);
-//					Desolve_step_para(Step_parameter);
-//					continue;
-//				  }
-//
-//
-//
-//			
-//			if(char_size==99998)
-//				{GPIO_ResetBits(GPIOE, GPIO_Pin_6);count_of_output=seq-1; //表达式的个数
-//				    /*************保存表达式，地址 表达式个数**********************/
-//			        Stm32_Clock_Init(9);	//系统时钟设置 Flash_Test_Area
-//					STMFLASH_Write(FLASH_SAVE_ADDR,(u16*)Expression_Output,600);// 表达式
-//					STMFLASH_Read(FLASH_SAVE_ADDR,(u16*)Flash_Test_Area,600);
-//														   
-//					STMFLASH_Write(ADDR_POINTER,(u16*)Addr_expression,100);//每个表达式偏移地址
-//					STMFLASH_Read(ADDR_POINTER,(u16*)Flash_Test_ADDR_Area,100);
-//
-//					STMFLASH_Write(Totall_Express,(u16*)&count_of_output,1);//表达式数量
-//					STMFLASH_Read(Totall_Express,(u16*)&Flash_count_of_output,1);
-//
-//					STMFLASH_Write(Expression_Len,(u16*)Len_expression,100);//每个表达式长度
-//					STMFLASH_Read(Expression_Len,(u16*)Flash_Test_Expression_Len,100);
-///****************************************************************************************************/
-//					STMFLASH_Write(Weight_para,(u16*)Weight_parameter,200);//重量参数字符串
-//					STMFLASH_Read(Weight_para,(u16*)Flash_Test_Weight_para,200);
-//
-//					STMFLASH_Write(Step_para,(u16*)Step_parameter,200);//步进参数字符串
-//					STMFLASH_Read(Step_para,(u16*)Flash_Test_Step_para,200);
-//					comm_over=1;
-//				    Out_Input_GPIO_Config();
-////					comm_calibration=1;
-////					goto New_port;
-//					continue;
-////#define Weight_para Expression_Len+1024*2
-////#define Step_para Weight_para+1024
-////char Flash_Test_Weight_para[1024*2];
-////char Flash_Test_Step_para[1024];
-//				   
-//				    /*************保存表达式，地址 表达式个数**********************/
-//
-////				 px_expression=Expression_Output;
-////				 for(i=0;i<count_of_output;i++)	//operation expression one by one
-////				 {
-////					 analysis_logic_express(px_expression+Addr_expression[i],0); //29	 17
-////					 calculate_ecxpress(px_expression+Addr_expression[i],Len_expression[i]);
-////				 }
-////				 simulator_package();//输出
-////				 Store_XRCT_Status();//边沿采集
-////				 if (true_false(0,1))
-////				 		X3=TRUE;
-//				     
-//				}
-//	px_expression=Expression_Output+Sum_Len_expression;
-//	DMA_Configuration_for_recive(px_expression,char_size);//5518+106);	113
-//    USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
-//    DMA_Cmd(DMA1_Channel5, ENABLE);
-//    while(DMA_GetFlagStatus(DMA1_FLAG_HT5) == RESET); //DMA1_FLAG_HT5 +Delay(0x02FFFF);可以降低对DMA的通讯字节数的精准度
-//		GPIO_SetBits(GPIOE, GPIO_Pin_5);//DMA1_FLAG_TC5
-//
-////			Delay(0x02FFFF);
-////			Delay(0x02FFFF);
-//			Delay(0x02FFFF);
-//	px_expression=Expression_Output+Sum_Len_expression;
-//	DMA_Configuration(px_expression,char_size);
-//    USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
-//    DMA_Cmd(DMA1_Channel4, ENABLE);
-//	while(DMA_GetFlagStatus(DMA1_FLAG_TC4) == RESET);
-//	Sum_Len_expression+=char_size;//块的长度
-//	seq++;
-//	Addr_expression[seq]=Sum_Len_expression;//块的地址
-//}
 }    
-#endif
+
 
 }
 
@@ -1122,6 +637,8 @@ void store_ton_package(void)
 				STMFLASH_Write(FL_Weighting_T,(u16*)&Weighting_T,4);//保存吨位·
 				STMFLASH_Read (FL_Weighting_T,(u16*)&Weighting_T,4); //
 				
+				//printf("save Weighting_T=%ld\r\n",Weighting_T);
+	
 				STMFLASH_Write(FL_Weighting_package,(u16*)&Weighting_package,4);//保存袋数·
 				STMFLASH_Read (FL_Weighting_package,(u16*)&Weighting_package,4);
 }
@@ -1478,7 +995,7 @@ void interface_for_setting(void)
 			   			case 5:
 								KLTT_AADR+=1;
 								write_para01(KLTT_AADR,4);
-							    dis_para00(Cal_Setting_step, Trace_zero_range,2 );
+							    dis_para00(Cal_Setting_step, Trace_zero_range,3 );
 						break;
 //3.延时数据组
 //dis_para00(seq_num, Delay_tare,1 );//RAM  int Delay_tare;//参数去皮延时输出
@@ -1704,7 +1221,7 @@ void interface_for_setting(void)
 			   			case 32:
 								KLTT_AADR+=1;
 								write_para01(KLTT_AADR,5);
-							    dis_para00(Cal_Setting_step, Initial_power_value,5 );
+							    dis_para00(Cal_Setting_step, Initial_power_value,1 );
 						break;
 
 //dis_para00(seq_num, Initial_feed_value,1 );//RAM  int Initial_feed_value;//参数初加量
@@ -2257,7 +1774,7 @@ void dis_para01(unsigned char seq_num,int para,char _image_ponter)
 
 	Modbus_Address=para;	 //store data//参数波特率关联号
 	Modbus_Counter=9;
-	USART1_Process();
+	wang_USART1_Process();
 
 
  }
@@ -2477,7 +1994,7 @@ if(!Input_setting_para)return;
 				 ID_budrate=9600;
 				//dis_para00(seq_num, Comm_Addr,1 );//RAM  int Comm_Addr;//参数通讯地址关联号
 //				case 02:
-				 Comm_Addr=1;
+				 Comm_Addr=2;
 				//2.置零数据组
 				//dis_para00(seq_num, Initial_zero_range,1 );//RAM  int Initial_zero_range;//参数开机置零范围
 //				cas 03:
@@ -2487,7 +2004,7 @@ if(!Input_setting_para)return;
 				 Munal_zero_range=1000;
 				//dis_para00(seq_num, Trace_zero_range,1 );//RAM  int Trace_zero_range;//参数零跟踪范围
 //				cas 05:
-				 Trace_zero_range=50;
+				 Trace_zero_range=90;
 				//3.延时数据组
 				//dis_para00(seq_num, Delay_tare,1 );//RAM  int Delay_tare;//参数去皮延时输出
 //				cas 06:
@@ -2518,7 +2035,7 @@ if(!Input_setting_para)return;
 				 Recive_x_signals=0;	  //借用称重控制完毕，显示保持延时
 				//dis_para00(seq_num, no_recive_x_signals,1 );//RAM  int no_recive_x_signals;//参数收不到x次信号设定限
 //				cas 15:
-				 no_recive_x_signals=0;
+				 no_recive_x_signals=10;
 				//dis_para00(seq_num, Even_howmany_package_Pre_process,1 );//RAM  int Even_howmany_package_Pre_process;//参数多少袋平均修正一次提前量
 //				cas 16:
 				 Even_howmany_package_Pre_process=100;
@@ -2637,6 +2154,16 @@ if(!Input_setting_para)return;
 //													   Delay(100000); setting_Status=1;
 //													   flag_borrow_interface_for_setting=0;
 
+	//add by John
+	 Cal_point=2;//标定小数点
+	 Cal_ID_division=0;//标定分度数关联号
+	 Cal_full_Mig=50;//标定满量程值
+	 Cal_user_weight=5000;//标定用户砝码重量
+	 //Cal_zero;//标定零位
+	 //Cal_ratio;//标定标率
+	 Cal_weight=5000;	//标定砝码重量
+	 Modbus_pulse.target_totall_pulse=18200;
+	 //add by John------
 }
 
 

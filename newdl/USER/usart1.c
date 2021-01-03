@@ -1,11 +1,4 @@
-/******************** 尚学科技 **************************
- * 实验平台：开拓者STM32开发板
- * 库版本  ：ST3.5.0
- * 作者    ：尚学科技团队 
- * 淘宝    ：http://shop102218275.taobao.com/
- * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
- *版权所有，盗版必究。
-**********************************************************************************/
+
 #include "usart1.h"
 #include <stdarg.h>
 #include <CRC.h>
@@ -243,13 +236,9 @@ extern void PC_comm3_command(unsigned char Data);
 void Reply_pc_inquier(void);
 unsigned char Datax;
 void Write_image_para(char i);
-/*
- * 函数名：USART1_Config
- * 描述  ：USART1 GPIO 配置,工作模式配置。115200 8-N-1
- * 输入  ：无
- * 输出  : 无
- * 调用  ：外部调用
- */
+
+extern void modbus_receive(unsigned char Data);
+extern char Initial_zero_flag;
 unsigned int mtb_crc_calc( unsigned char *crc_str, char count)
 {
 	  unsigned char i,j;
@@ -302,9 +291,9 @@ void USART1_REMAP_Config(void)
 	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
 
 	USART_Init(USART1, &USART_InitStructure); 
-	USART_Cmd(USART1, ENABLE);//使能串口
+	
 	USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);	//+++++++++++++++++++++++++
-
+	USART_Cmd(USART1, ENABLE);//使能串口
 }
 
 void USART1_Config(void)
@@ -334,8 +323,9 @@ void USART1_Config(void)
 	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
 
 	USART_Init(USART1, &USART_InitStructure); 
-	USART_Cmd(USART1, ENABLE);//使能串口
+
 	USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);	//+++++++++++++++++++++++++
+	USART_Cmd(USART1, ENABLE);//使能串口
 
 }
 void USART3_Config(void)
@@ -471,7 +461,7 @@ USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None; 
 USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;//接收与发送都使能
 USART_Init(UART5, &USART_InitStructure);  //初始化UART5
  
-/*使能串口3的发送和接收中断*/
+/*使能串口5的发送和接收中断*/
 USART_ITConfig(UART5, USART_IT_RXNE, ENABLE);  
 USART_Cmd(UART5, ENABLE);// UART5 Enable
 }
@@ -498,12 +488,12 @@ void NVIC_Configuration(void)
  NVIC_InitTypeDef NVIC_InitStructure;
  NVIC_SetVectorTable(NVIC_VectTab_FLASH, 0x0000); 
 
-// NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);     //先占优先权2，从优先级2位
-// NVIC_InitStructure.NVIC_IRQChannel =USART1_IRQn;// USART1_IRQn;    //开串口中断1
-// NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority=0;   //指定抢占优先级别1
-// NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;    //指定相应优先级别0
-// NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-// NVIC_Init(&NVIC_InitStructure);
+ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);     //先占优先权2，从优先级2位
+ NVIC_InitStructure.NVIC_IRQChannel =USART1_IRQn;// USART1_IRQn;    //开串口中断1
+ NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority=0;   //指定抢占优先级别1
+ NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;    //指定相应优先级别0
+ NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+ NVIC_Init(&NVIC_InitStructure);
 
  NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);     //先占优先权2，从优先级2位
  NVIC_InitStructure.NVIC_IRQChannel =USART2_IRQn;   //开串口中断1
@@ -593,7 +583,7 @@ NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 int fputc(int ch, FILE *f)
 {
 	/* 将Printf内容发往串口 */
-	//USART_SendData(USART1, (unsigned char) ch);
+	USART_SendData(USART1, (unsigned char) ch);
 	while( USART_GetFlagStatus(USART1,USART_FLAG_TC)!= SET);	
 	return (ch);
 }
@@ -608,31 +598,18 @@ int read_com1(void)
    USART_ClearFlag(USART1,USART_FLAG_RXNE);
    return (USART_ReceiveData(USART1));
 }
-//注释：
-//fgetc 和 fgetc是c语言的标准函数（形参是标准的） FILE *f 是文件指针，
-//具备文件系统的操作系统有用。对于简单的无文件系统的嵌入式系统无用。
-void USART1_Process(void)
+extern void auth_receive(unsigned char Data);
+void wang_USART1_Process(void)
 {
 	unsigned char Data,temps[3];
 	int px,return_crc;
 	u8 *p,i,len,byte_count;
  #define recive_para 100
 
-// Pre_feed++;//=1001;//6 参数提前量	
-// Weighting_T+=2;
-// Weighting_package+=4;
-// Weighting_even+=3;
-//  if(q_num<15001)q_num+=1;	,x00
 
-// if(USART_GetITStatus(USART1, USART_IT_TXE) != RESET)
-// {x00=9;}
 
-	 USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
-//	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
-//	{	
-//		Data = (unsigned char)USART_ReceiveData(USART1);
-//		Modbus_Data[Modbus_Counter]=Data;
-
+		//USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
+	
 		switch (Modbus_Counter)
 		{
 			case 0:
@@ -725,6 +702,7 @@ void USART1_Process(void)
 									if(Modbus_value==0xff00)//标定砝码确认键按钮按下
 									{Cal_weight_confirm_key_pressed=1;
 									 Un_Cal_output;
+									//	Initial_zero_flag=1;
 									}
 									else
 									{Cal_weight_confirm_key_pressed=0;
@@ -811,422 +789,7 @@ void USART1_Process(void)
 													  *(p++)=Modbus_weight.long_weight[0];
 		                                            break;
 
-//		                                        case 8:	//参数定量的总脉冲数
-//													  *(p++)=Modbus_pulse.pulse[3];
-//		                                            break;
-//		                                        case 9:
-//													  *(p++)=Modbus_pulse.pulse[2];
-//		                                            break;
-//		                                        case 10:
-//													  *(p++)=Modbus_pulse.pulse[1];
-//		                                            break;
-//		                                        case 11:
-//													  *(p++)=Modbus_pulse.pulse[0];
-//		                                            break;
-//
-//		                                        case 12:	//参数定量
-//													  *(p++)=Modbus_target.target[3];
-//		                                            break;
-//		                                        case 13:
-//													  *(p++)=Modbus_target.target[2];
-//		                                            break;
-//		                                        case 14:
-//													  *(p++)=Modbus_target.target[1];
-//		                                            break;
-//		                                        case 15:
-//													  *(p++)=Modbus_target.target[0];
-//		                                            break;
-//												//1.通讯数据组
-//		                                        case 16:	//参数波特率关联号
-//													  *(p++)=(char)ID_budrate>>8;
-//		                                            break;
-//		                                        case 17:
-//													  *(p++)=(char)ID_budrate;
-//		                                            break;
-//		                                        case 18:   //参数通讯地址关联号
-//													  *(p++)=(char)Comm_Addr>>8;
-//		                                            break;
-//		                                        case 19:
-//													  *(p++)=(char)Comm_Addr;
-//		                                            break;
-//												//2.置零数据组
-//		                                        case 20:	//参数开机置零范围
-//													  *(p++)=(char)Initial_zero_range>>8;
-//		                                            break;
-//		                                        case 21:
-//													  *(p++)=(char)Initial_zero_range;
-//		                                            break;
-//		                                        case 22:   //参数手动置零范围
-//													  *(p++)=(char)Munal_zero_range>>8;
-//		                                            break;
-//		                                        case 23:
-//													  *(p++)=(char)Munal_zero_range;
-//		                                            break;
-//		                                        case 24:   //参数零跟踪范围
-//													  *(p++)=(char)Trace_zero_range>>8;
-//		                                            break;
-//		                                        case 25:
-//													  *(p++)=(char)Trace_zero_range;
-//		                                            break;
-//
-//											   //____________________________________
-////3.延时数据组
-// 		                                        case 26:	//参数去皮延时输出
-//													  *(p++)=Delay_tare>>8;
-//		                                            break;
-//		                                        case 27:
-//													  *(p++)=Delay_tare;
-//		                                            break;
-//		                                        case 28:   //参数中加延时
-//													  *(p++)=Delay_Mid_feed>>8;
-//		                                            break;
-//		                                        case 29:
-//													  *(p++)=Delay_Mid_feed;
-//		                                            break;
-//		                                        case 30:   //参数提前延时
-//													  *(p++)=Delay_Pre_process>>8;
-//		                                            break;
-//		                                        case 31:
-//													  *(p++)=Delay_Pre_process;
-//		                                            break;
-//
-//		                                        case 32:   //参数下一循环延时
-//													  *(p++)=Delay_Next_loop>>8;
-//		                                            break;
-//		                                        case 33:
-//													  *(p++)=Delay_Next_loop;
-//		                                            break;
-//
-//		                                        case 34:	//参数慢加监视上限时间
-//													  *(p++)=Time_supvisor_Slow_feed_up_limt>>8;
-//		                                            break;
-//		                                        case 35:
-//													  *(p++)=Time_supvisor_Slow_feed_up_limt;
-//		                                            break;
-//
-//		                                        case 36:   //参数慢加监视下限时间
-//													  *(p++)=Time_supvisor_Slow_feed_low_limt>>8;
-//		                                            break;
-//		                                        case 37:
-//													  *(p++)=Time_supvisor_Slow_feed_low_limt;
-//		                                            break;
-//
-//
-//		                                        case 38:   //参数多少袋输出脉冲
-//													  *(p++)=Pulse_howmany_package>>8;
-//		                                            break;
-//		                                        case 39:
-//													  *(p++)=Pulse_howmany_package;
-//		                                            break;
-//
-// 		                                        case 40:	//参数多少袋去皮一次
-//													  *(p++)=Tare_howmany_package>>8;
-//		                                            break;
-//		                                        case 41:
-//													  *(p++)=Tare_howmany_package;
-//		                                            break;
-//
-//		                                        case 42:   //参数收到x次信号设定
-//													  *(p++)=Recive_x_signals>>8;
-//		                                            break;
-//		                                        case 43:
-//													  *(p++)=Recive_x_signals;
-//		                                            break;
-//
-//
-//		                                        case 44:   //参数收不到x次信号设定限
-//													  *(p++)=no_recive_x_signals>>8;
-//		                                            break;
-//		                                        case 45:
-//													  *(p++)=no_recive_x_signals;
-//		                                            break;
-//
-// 		                                        case 46:	//参数多少袋平均修正一次提前量
-//													  *(p++)=Even_howmany_package_Pre_process>>8;
-//		                                            break;
-//		                                        case 47:
-//													  *(p++)=Even_howmany_package_Pre_process;
-//		                                            break;
-//
-//
-//		                                        case 48:   //参数慢加延时
-//													  *(p++)=Delay_slow_feed>>8;
-//		                                            break;
-//		                                        case 49:
-//													  *(p++)=Delay_slow_feed;
-//		                                            break;
-//
-//		                                        case 50:   //参数初加延时
-//													  *(p++)=Delay_initial_feed>>8;
-//		                                            break;
-//		                                        case 51:
-//													  *(p++)=Delay_initial_feed;
-//		                                            break;
-//
-//											   //*************************************
-////4.控制数据组
-// 		                                        case 52:   //1 参数慢加修正上限
-//													  *(p++)=Slow_feed_modify_uper_limt>>8;
-//		                                            break;
-//		                                        case 53:
-//													  *(p++)=Slow_feed_modify_uper_limt;
-//		                                            break;
-// 		                                        case 54:   //2 参数慢加修正下限
-//													  *(p++)=Slow_feed_modify_down_limt>>8;
-//		                                            break;
-//		                                        case 55:
-//													  *(p++)=Slow_feed_modify_down_limt;
-//		                                            break;
-// 		                                        case 56:   //3 参数提前量修正上限
-//													  *(p++)=Pre_feed_modify_uper_limt>>8;
-//		                                            break;
-//		                                        case 57:
-//													  *(p++)=Pre_feed_modify_uper_limt;
-//		                                            break;
-// 		                                        case 58:   //4 参数提前量修正下限
-//													  *(p++)=Pre_feed_modify_down_limt>>8;
-//		                                            break;
-//		                                        case 59:
-//													  *(p++)=Pre_feed_modify_down_limt;
-//		                                            break;
-// 		                                        case 60:   //5 参数慢加量
-//													  *(p++)=Slow_feed>>8;
-//		                                            break;
-//		                                        case 61:
-//													  *(p++)=Slow_feed;
-//		                                            break;
-// 		                                        case 62:   //6 参数提前量
-//													  *(p++)=Pre_feed>>8;
-//		                                            break;
-//		                                        case 63:
-//													  *(p++)=Pre_feed;
-//		                                            break;
-// 		                                        case 64:   //7 参数中加值
-//													  *(p++)=Mid_feed>>8;
-//		                                            break;
-//		                                        case 65:
-//													  *(p++)=Mid_feed;
-//		                                            break;
-// 		                                        case 66:   //8 参数允差
-//													  *(p++)=Dlet_error>>8;
-//		                                            break;
-//		                                        case 67:
-//													  *(p++)=Dlet_error;
-//		                                            break;
-// 		                                        case 68:   //9 参数定值
-//													  *(p++)=Target>>8;
-//		                                            break;
-//		                                        case 69:
-//													  *(p++)=Target;
-//		                                            break;
-//
-// 		                                        case 70:   //a 参数定量上限
-//													  *(p++)=Target_uper_limt>>8;
-//		                                            break;
-//		                                        case 71:
-//													  *(p++)=Target_uper_limt;
-//		                                            break;
-// 		                                        case 72:   //b  参数定量下限
-//													  *(p++)=Target_down_limt>>8;
-//		                                            break;
-//		                                        case 73:
-//													  *(p++)=Target_down_limt;
-//		                                            break;
-// 		                                        case 74:   //c  参数零区
-//													  *(p++)=zero_range>>8;
-//		                                            break;
-//		                                        case 75:
-//													  *(p++)=zero_range;
-//		                                            break;
-//  		                                        case 76:   //d 参数慢加修正量
-//													  *(p++)=Slow_feed_modify>>8;
-//		                                            break;
-//		                                        case 77:
-//													  *(p++)=Slow_feed_modify;
-//		                                            break;
-//
-//
-//  		                                        case 78:   //d 参数初上电值
-//													  *(p++)=Initial_power_value>>8;
-//		                                            break;
-//		                                        case 79:
-//													  *(p++)=Initial_power_value;
-//		                                            break;
-//  		                                        case 80:   //d 参数初加量
-//													  *(p++)=Initial_feed_value>>8;
-//		                                            break;
-//		                                        case 81:
-//													  *(p++)=Initial_feed_value;
-//		                                            break;
-//  		                                        case 82:   //d 参数随机设定值
-//													  *(p++)=Random_setting_value>>8;
-//		                                            break;
-//		                                        case 83:
-//													  *(p++)=Random_setting_value;
-//		                                            break;
-////5.修正数据组
-//  		                                        case 84:   //参数用户标定关联号
-//													  *(p++)=ID_user_cal>>8;
-//		                                            break;
-//		                                        case 85:
-//													  *(p++)=ID_user_cal;
-//		                                            break;
-//  		                                        case 86:   //参数慢加修正标记关联号
-//													  *(p++)=ID_slow_feed_modify>>8;
-//		                                            break;
-//		                                        case 87:
-//													  *(p++)=ID_slow_feed_modify;
-//		                                            break;
-//
-//  		                                        case 88:   //参数提前修正标记关联号
-//													  *(p++)=ID_pre_feed_modify>>8;
-//		                                            break;
-//		                                        case 89:
-//													  *(p++)=ID_pre_feed_modify;
-//		                                            break;
-//
-//  		                                        case 90:   //参数运行模式关联号
-//													  *(p++)=ID_run_mode>>8;
-//		                                            break;
-//		                                        case 91:
-//													  *(p++)=ID_run_mode;
-//		                                            break;
-//
-//
-////7.标定数据组
-//  		                                        case 92:   //标定分度数关联号
-//													  *(p++)=Cal_ID_division>>8;
-//		                                            break;
-//		                                        case 93:
-//													  *(p++)=Cal_ID_division;
-//		                                            break;
-//
-//		                                        case 94:	//标定用户砝码重量
-//													  *(p++)=Modbus_Cal_user_weight.user_weight[3];
-//		                                            break;
-//		                                        case 95:
-//													  *(p++)=Modbus_Cal_user_weight.user_weight[2];
-//		                                            break;
-//		                                        case 96:
-//													  *(p++)=Modbus_Cal_user_weight.user_weight[1];
-//		                                            break;
-//		                                        case 97:
-//													  *(p++)=Modbus_Cal_user_weight.user_weight[0];
-//		                                            break;
-//
-//		                                        case 98:	//标定砝码重量
-//													  *(p++)=Modbus_Cal_weight.add_weight[3];
-//		                                            break;
-//		                                        case 99:
-//													  *(p++)=Modbus_Cal_weight.add_weight[2];
-//		                                            break;
-//		                                        case 100:
-//													  *(p++)=Modbus_Cal_weight.add_weight[1];
-//		                                            break;
-//		                                        case 101:
-//													  *(p++)=Modbus_Cal_weight.add_weight[0];
-//		                                            break;
-//
-////8.滤波数据组：
-//  		                                        case 102:   //参数滤波范围0
-//													  *(p++)=Range_Filter0>>8;
-//		                                            break;
-//		                                        case 103:
-//													  *(p++)=Range_Filter0;
-//		                                            break;
-//  		                                        case 104:   //参数滤波范围1
-//													  *(p++)=Range_Filter1>>8;
-//		                                            break;
-//		                                        case 105:
-//													  *(p++)=Range_Filter1;
-//		                                            break;
-//
-//  		                                        case 106:   //参数滤波范围2
-//													  *(p++)=Range_Filter2>>8;
-//		                                            break;
-//		                                        case 107:
-//													  *(p++)=Range_Filter2;
-//		                                            break;
-//
-//  		                                        case 108:   //参数滤波范围3
-//													  *(p++)=Range_Filter3>>8;
-//		                                            break;
-//		                                        case 109:
-//													  *(p++)=Range_Filter3;
-//		                                            break;
-//
-//  		                                        case 110:   //参数滤波范围4
-//													  *(p++)=Range_Filter4>>8;
-//		                                            break;
-//		                                        case 111:
-//													  *(p++)=Range_Filter4;
-//		                                            break;
-//												/******************/
-//					   		                   case 112:   //参数滤波强度0
-//													  *(p++)=Strong_Filter0>>8;
-//		                                            break;
-//		                                        case 113:
-//													  *(p++)=Strong_Filter0;
-//		                                            break;
-//  		                                        case 114:   //参数滤波强度1
-//													  *(p++)=Strong_Filter1>>8;
-//		                                            break;
-//		                                        case 115:
-//													  *(p++)=Strong_Filter1;
-//		                                            break;
-//
-//  		                                        case 116:   //参数滤波强度2
-//													  *(p++)=Strong_Filter2>>8;
-//		                                            break;
-//		                                        case 117:
-//													  *(p++)=Strong_Filter2;
-//		                                            break;
-//
-//  		                                        case 118:   //参数滤波强度3
-//													  *(p++)=Strong_Filter3>>8;
-//		                                            break;
-//		                                        case 119:
-//													  *(p++)=Strong_Filter3;
-//		                                            break;
-//
-//  		                                        case 120:   //参数滤波强度4
-//													  *(p++)=Strong_Filter4>>8;
-//		                                            break;
-//		                                        case 121:
-//													  *(p++)=Strong_Filter4;
-//		                                            break;
-////反馈信号，如 去皮 置零
-// 		                                        case 122:	//反馈信号，如 去皮 置零
-//													  *(p++)=Feed_signal_buffer[1];//高在先 0x83;	  //contents
-//		                                            break;
-//		                                        case 123:
-//													  *(p++)=Feed_signal_buffer[0];//0xc7;	  //contents
-//		                                            break;
-//
-////称重_吨位，袋数，平均值
-////int Weighting_T,Weighting_package,Weighting_even;
-//  		                                        case 124:   //称重_吨位
-//													  *(p++)=Weighting_T>>8;
-//		                                            break;
-//		                                        case 125:
-//													  *(p++)=Weighting_T;
-//		                                            break;
-//
-//  		                                        case 126:   //称重_袋数
-//													  *(p++)=Weighting_package>>8;
-//		                                            break;
-//		                                        case 127:
-//													  *(p++)=Weighting_package;
-//		                                            break;
-//
-//  		                                        case 128:   //称重_平均值
-//													  *(p++)=Weighting_even>>8;
-//		                                            break;
-//		                                        case 129:
-//													  *(p++)=Weighting_even;
-//		                                            break;
 
-//反馈信号，如 去皮 置零
  		                                        case 8:	//反馈信号，如 去皮 置零
 													  *(p++)=Feed_signal_buffer[1];//高在先 0x83;	  //contents
 		                                            break;
@@ -1284,10 +847,12 @@ void USART1_Process(void)
 										*(p++)=0;//end
 										p=Modbus_Data;
 										len+=2;
+										 /*
 											DMA_Configuration((char *)Modbus_Data,len);
 										    USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
 										    DMA_Cmd(DMA1_Channel4, ENABLE);
-											while(DMA_GetFlagStatus(DMA1_FLAG_TC4) == RESET);
+											while(DMA_GetFlagStatus(DMA1_FLAG_TC4) == RESET);*/
+										 //del by John
 //											GPIO_WriteBit(GPIOE, GPIO_Pin_6, (BitAction)(1-(GPIO_ReadOutputDataBit(GPIOE, GPIO_Pin_6))));//第一LED:通讯
 									}
 										Modbus_function=0;//if CRC ok 
@@ -1321,14 +886,7 @@ void USART1_Process(void)
 						Modbus_pulse.pulse[0]=Modbus_0x10_Value[1];
 						STMFLASH_Write(FF_Target_pulse,(u16*)&Modbus_pulse.target_totall_pulse,4);
 					}
-//					if(Modbus_Address==1505)//1005:Modbus地址
-//					{
-//						Modbus_target.target[3]=Modbus_0x10_Value[0];
-//						Modbus_target.target[2]=Modbus_0x10_Value[1];
-//						Modbus_target.target[1]=Modbus_0x10_Value[2];
-//						Modbus_target.target[0]=Modbus_0x10_Value[3];
-//					}
-//				    target_value  Modbus_pulse
+
 //1.通讯数据组
 					if(Modbus_Address==comm_bud_rate)//
 					{
@@ -1765,7 +1323,7 @@ void USART1_Process(void)
 						Range_Filter4|=Modbus_0x10_Value[1];
 						STMFLASH_Write(FF_Range_Filter4,(u16*)&Range_Filter4,5);
 					}
-					/*******************************/
+					
 //int Strong_Filter0;//参数滤波强度
 					if(Modbus_Address==Strong_Filter0_address)//参数滤波强度
 					{
@@ -1838,20 +1396,6 @@ void USART1_Process(void)
 					} 
 
 
-//8.滤波数据组：
-//#define Range_Filter0_address Cal_weight_address+2    //参数滤波范围0
-//#define Range_Filter1_address Range_Filter0_address+1//参数滤波范围1
-//#define Range_Filter2_address Range_Filter1_address+1//参数滤波范围2
-//#define Range_Filter3_address Range_Filter2_address+1//参数滤波范围3
-//#define Range_Filter4_address Range_Filter3_address+1//参数滤波范围4
-//
-//#define Strong _Filter0_address Range_Filter4_address+1//参数滤波强度0
-//#define Strong_Filter1_address Strong_Filter0_address+1//参数滤波强度1
-//#define Strong_Filter2_address Strong_Filter1_address+1//参数滤波强度2
-//#define Strong_Filter3_address Strong_Filter2_address+1//参数滤波强度3
-//#define Strong_Filter4_address Strong_Filter3_address+1//参数滤波强度4
-
-
 			 break;	 
 		     case 10:
 					Modbus_CRC_CODE=Data;
@@ -1919,9 +1463,6 @@ void USART1_Process(void)
 				break;
 		}
 	}
-//}
-
-
 
 
 
@@ -1937,6 +1478,7 @@ void RCC_Configuration(void)
     //如果外部晶振启动成功，则进行下一步操作
     if(HSEStartUpStatus==SUCCESS)
     {
+
         //设置HCLK（AHB时钟）=SYSCLK
         RCC_HCLKConfig(RCC_SYSCLK_Div1);
         //PCLK1(APB1) = HCLK/2
@@ -1968,6 +1510,7 @@ void RCC_Configuration(void)
         while(RCC_GetSYSCLKSource() != 0x04);
         */
     }
+		else while(1);
     //下面是给各模块开启时钟
     //启动GPIO
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | \
@@ -2167,10 +1710,26 @@ void TestY_output(int Modbus_Address )
 		 }
 
 }
+void USART1_Process(void)
+{
+	unsigned char Datax;
 
+	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
+	{
+			Datax = (unsigned char)USART_ReceiveData(USART1);
+
+			auth_receive(Datax);
+			//USART_SendData(USART1,Datax);
+			USART_ClearITPendingBit(USART1,USART_IT_RXNE);
+			USART_ClearFlag(USART1, USART_IT_RXNE);
+	
+	}
+	
+	
+}
 
 void USART2_Process(void)
-{
+{//usart2 used as pulse_add,receive is noused.but send data would use interrupt.
 char x00,Data;
 // if(USART_GetITStatus(USART2, USART_IT_TXE) != RESET)
 // {x00+=9;}
@@ -2187,41 +1746,20 @@ char x00,Data;
 			USART_ClearFlag(USART2, USART_IT_RXNE);
 	}
 
-//	if(USART_GetITStatus(USART2, USART_IT_RXNE) != RESET)
-//	{
-//		Data = (unsigned char)USART_ReceiveData(USART2);
-//		if(	Data ==0xab)
-//		 {
-//		    USART2_RE_high;
-//			USART2_DE_high;
-//			USART_SendData(USART2,0xcd);
-//			while(USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
-//			USART_SendData(USART2,0x12);
-//			while(USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
-//			USART_SendData(USART2,' ');
-//			while(USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET); //不发送
-////			elimate_USART_DE[2]=3;
-//			USART2_RE_lowx;
-//			USART2_DE_lowx;
-//		 }
-//	}
 
 }
 void USART3_Process(void)
 {
-//char Data;
+	unsigned char Datax;
 
 	if(USART_GetITStatus(USART3, USART_IT_RXNE) != RESET)
 	{
 			Datax = (unsigned char)USART_ReceiveData(USART3);
-			PC_comm3_command(Datax);
 
-//			if(	Datax ==Comm_Addr+'B')
-//			{
-//				 Pc_recived=1;
-//			}
-//			USART_ClearITPendingBit(USART3,USART_IT_RXNE);
-//			USART_ClearFlag(USART3, USART_IT_RXNE);
+			modbus_receive(Datax);
+
+			USART_ClearITPendingBit(USART3,USART_IT_RXNE);
+			USART_ClearFlag(USART3, USART_IT_RXNE);
 	}
 }
 void UART4_Process(void)
@@ -2234,7 +1772,7 @@ char x00,Data;
 	if(USART_GetITStatus(UART4, USART_IT_RXNE) != RESET)
 	{
 		Data = (unsigned char)USART_ReceiveData(UART4);
-		if(	Data ==0xab)
+		if(	Data ==0x0ab)
 		 {
 		    USART2_RE_high;
 			USART2_DE_high;
@@ -2273,6 +1811,7 @@ char x00,Data;
 
 void Recover_para(void)
 {
+//	printf("r4=%ld\n",Weighting_T);
 //1.通讯数据组
 STMFLASH_Read (FF_ID_budrate,(u16*)&ID_budrate,4);
 STMFLASH_Read (FF_Comm_Addr,(u16*)&Comm_Addr,4);
@@ -2287,7 +1826,7 @@ STMFLASH_Read (FF_Delay_Pre_process,(u16*)&Delay_Pre_process,4);
 STMFLASH_Read (FF_Delay_Next_loop,(u16*)&Delay_Next_loop,4);
 STMFLASH_Read (FF_Time_supvisor_Slow_feed_up_limt,(u16*)&Time_supvisor_Slow_feed_up_limt,4);
 STMFLASH_Read (FF_Time_supvisor_Slow_feed_low_limt,(u16*)&Time_supvisor_Slow_feed_low_limt,4);
-
+//printf("r5=%ld\n",Weighting_T);
 STMFLASH_Read (FF_Pulse_howmany_package,(u16*)&Pulse_howmany_package,4);
 STMFLASH_Read (FF_Tare_howmany_package,(u16*)&Tare_howmany_package,4);
 STMFLASH_Read (FF_Recive_x_signals,(u16*)&Recive_x_signals,4);
@@ -2313,32 +1852,39 @@ STMFLASH_Read (FF_Initial_power_value,(u16*)&Initial_power_value,4);
 STMFLASH_Read (FF_Initial_feed_value,(u16*)&Initial_feed_value,4);
 STMFLASH_Read (FF_Random_setting_value,(u16*)&Random_setting_value,4);
 //5.修正数据组
+//printf("r6=%ld\n",Weighting_T);----------------------------------------------
 STMFLASH_Read (FF_ID_user_cal,(u16*)&ID_user_cal,4);
 STMFLASH_Read (FF_ID_slow_feed_modify,(u16*)&ID_slow_feed_modify,4);
 STMFLASH_Read (FF_ID_pre_feed_modify,(u16*)&ID_pre_feed_modify,4);
 STMFLASH_Read (FF_ID_run_mode,(u16*)&ID_run_mode,4);
 //7.标定数据组
+//printf("r8=%ld\n",Weighting_T);
 STMFLASH_Read (FF_Cal_ID_division,(u16*)&Cal_ID_division,4);
 STMFLASH_Read (FF_Cal_user_weight,(u16*)&Cal_user_weight,4);
 STMFLASH_Read (FF_Cal_weight,(u16*)&Cal_weight,4);
 //8.滤波数据组：
+//printf("r9=%ld\n",Weighting_T);
 STMFLASH_Read (FF_Range_Filter0,(u16*)&Range_Filter0,5);
 STMFLASH_Read (FF_Range_Filter1,(u16*)&Range_Filter1,5);
 STMFLASH_Read (FF_Range_Filter2,(u16*)&Range_Filter2,5);
 STMFLASH_Read (FF_Range_Filter3,(u16*)&Range_Filter3,5);
 STMFLASH_Read (FF_Range_Filter4,(u16*)&Range_Filter4,5);
-
+//printf("r10=%ld\n",Weighting_T);
 STMFLASH_Read (FF_Strong_Filter0,(u16*)&Strong_Filter0,4);
+//printf("r13=%ld\n",Weighting_T);
 STMFLASH_Read (FF_Strong_Filter1,(u16*)&Strong_Filter1,4);
+//printf("r14=%ld\n",Weighting_T);
 STMFLASH_Read (FF_Strong_Filter2,(u16*)&Strong_Filter2,4);
+//printf("r15=%ld\n",Weighting_T);
 STMFLASH_Read (FF_Strong_Filter3,(u16*)&Strong_Filter3,4);
-STMFLASH_Read (FF_Strong_Filter4,(u16*)&Strong_Filter4,4);
-
+//printf("r16=%ld\n",Weighting_T);
+STMFLASH_Read (FF_Strong_Filter4,(u16*)&Strong_Filter4,2);
+//printf("r11=%ld\n",Weighting_T);
 STMFLASH_Read (FF_Cal_full_Mig,(u16*)&Cal_full_Mig,4);
 STMFLASH_Read (FF_Cal_point,(u16*)&Cal_point,4);
-
+//printf("r12=%ld\n",Weighting_T);
 STMFLASH_Read (FF_Target_pulse,(u16*)&Modbus_pulse.target_totall_pulse,4);
-
+//printf("r7=%ld\n",Weighting_T);
 STMFLASH_Read (FF_image_Pulse_howmany_package,(u16*)&image_Pulse_howmany_package,4);//参数多少袋输出脉冲
 STMFLASH_Read (FF_image_Tare_howmany_package,(u16*)&image_Tare_howmany_package,4);//参数多少袋去皮一次
 STMFLASH_Read (FF_image_Even_howmany_package_Pre_process,(u16*)&image_Even_howmany_package_Pre_process,4);//参数多少袋平均修正一次提前量

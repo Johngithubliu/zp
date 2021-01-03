@@ -8,8 +8,10 @@
 #define XX_image_Tare_howmany_package  2
 #define XX_image_Even_howmany_package_Pre_process  3
 #define XX_image_Pre_feed  4 
-
+#define debug	1
 void send_302(void);
+void send_modbus(void);
+extern unsigned char AUTH;
 
 int frezen_AD_DISPLAY_DELAY_TIMER;
 int frezen_AD_DISPLAY_DELAY_TIMER_flag;
@@ -277,6 +279,15 @@ int Data_Addr;
  
 unsigned char F302=0;
 unsigned char F302_Fram[9];
+unsigned char modbus_Fram[32];
+unsigned char mod_rec_buf[10];
+void modbus_receive(unsigned char Data);
+void auth_receive(unsigned char Data);
+void clear_arr();
+unsigned char auth=10;
+unsigned arr_buf[32];
+unsigned char u3_send_count=0;
+unsigned char c1_rec_buf[8];
  
 void Scanning_input_KLTT(void)
 {
@@ -286,7 +297,6 @@ long i;
 		{
 		//	for(i=0;i<10000000;i++);
 		//	if(!Input_start)return;
-
 
 		    if(state_operation==Machine_Pause)
 			{state_operation=reservestate_operation;return;}   //*2017-10-28am*
@@ -437,17 +447,6 @@ if(state_operation>=1)
  }
 
 
-//
-////							Delt_temp=abs(Target-Pre_feed); // 参数提前量 Pre_feed 参数定值 Target
-////							if (Modbus_weight.weight_long>Delt_temp)
-////								{ 	  }
-//
-//
-//
-//
-//
-//
-//
 
 
 
@@ -639,21 +638,7 @@ void Teating_weight_Random_output(void)
 unsigned int pulse_delay;
 void process_feed_material(void)
 { unsigned char *px,i;
-//int frezen_AD_DISPLAY_DELAY_TIMER;
-//if(q_num<1500)	return;
-
-// 					if (Modbus_weight.weight_long<=zero_range&&state_operation>=1&&!set_shut_initial_mid_slow_prefeed_timer)  //参数零区 zero_range	 //*2017-10-28am*
-//++++++++++++++++++++ 				
-//					if (Modbus_weight.weight_long<=zero_range&&!set_shut_initial_mid_slow_prefeed_timer&&state_operation!=-1)  //参数零区 zero_range	 //*2017-10-28am*
-//				
-//					{ Clear_output();state_operation=3;}//state_operation=3;}
-				
-				
-				
-					 //Un_Initial_output;	}	//*2017-10-28am* //1.初加输出=0
-// 					if (Modbus_weight.weight_long<=zero_range&&state_operation>=1)  //参数零区 zero_range	 //*2017-10-28am*
-//					{Un_Mid_fed;Un_Slow_fed;Un_Pre_fed;Un_Insert_board_output;	}	//*2017-10-28am* //1.中慢提前量加 插板输出=0
-					
+		
     if(state_operation==-1){system_indicator=0;return;}
 			   if(ADC_STAB)
 			   	{
@@ -663,47 +648,12 @@ void process_feed_material(void)
 					{Signal_lamp[6]=0x00;}	   //*2017-10-28am*
 				}
 
-  //*********************					
-
-
-//		   if(set_shut_initial_mid_slow_prefeed_timer)
-//		   		{
-//					if(!shut_initial_mid_slow_prefeed_timer[0]&&set__initial_mid_slow_prefeed_timer[0])  //*2017-10-28am*	
-//					{Un_Initial_output;set__initial_mid_slow_prefeed_timer[0]=0;}//[13]=0
-//					if(!shut_initial_mid_slow_prefeed_timer[1]&&set__initial_mid_slow_prefeed_timer[1])  //*2017-10-28am*	
-//					{Un_Mid_fed;set__initial_mid_slow_prefeed_timer[1]=0;}//[3]=0
-//					if(!shut_initial_mid_slow_prefeed_timer[2]&&set__initial_mid_slow_prefeed_timer[2])  //*2017-10-28am*	
-//					{Un_Slow_fed;set__initial_mid_slow_prefeed_timer[2]=0;}//[4]=0
-//					if(!shut_initial_mid_slow_prefeed_timer[3]&&set__initial_mid_slow_prefeed_timer[3])  //*2017-10-28am*	
-//					{Un_Pre_fed;set__initial_mid_slow_prefeed_timer[3]=0;}//[5]=0
-//				}
-
-
-
-//	Tare;
-//   system_indicator=2;
+ 
 
 	switch(state_operation)
 	{
 	  
-//		case 0:
-//		        if(main_powered)break;
-//
-//
-//				if (Modbus_weight.weight_long>Initial_power_value) // 参数初上电值 Initial_power_value 
-//					{
-//						state_operation=1; main_powered=1;
-//						Initial_power_output;system_indicator=1; //初上电输出
-//						Delt_temp=Target-Pre_feed; // 参数提前量 Pre_feed 参数定值 Target
-//						if (Modbus_weight.weight_long<Delt_temp) break;
-//					    Pre_fed;//提前输出
-//						state_operation=9; main_powered=1; break;
-//					}
-//				else
-//				    {state_operation=1; main_powered=1;}
-//		break;
-//							Delt_temp=abs(Target-Pre_feed); // 参数提前量 Pre_feed 参数定值 Target
-//							if (Modbus_weight.weight_long>Delt_temp&&state_operation<=9)  state_operation=10;//*2017-10-28am*
+
 		case 1:
 //		   for(i=0;i<9;i++)
 //			  {if(i!=6)Signal_lamp[i]=0x00;}//信号灯全黑	//*2017-10-28am*
@@ -760,21 +710,6 @@ void process_feed_material(void)
 					{  c_t100=Delay_initial_feed;
 					   Initial_output;Signal_lamp[2]=0x01;//system_indicator=4;	//1.初加输出 //+++++++++
 						state_operation=4;
-
-//  					if(system_indicator==4) //初加	
-//					{Signal_lamp[2]=0x01;}	// 绿灯
-//	
-//					if(system_indicator==5) //中加	
-//					{Signal_lamp[3]=0x01;}	// 绿灯
-//	
-//					if(system_indicator==6) //慢加	
-//					{Signal_lamp[4]=0x01;}	// 绿灯
-//	
-//					if(system_indicator==7) //提前	
-//					{Signal_lamp[5]=0x01;}	// 绿灯
-//
-
-
 
 					}
 		break;
@@ -933,61 +868,62 @@ void process_feed_material(void)
 //										store_test_result_to_stack();
 //										get_test_result_form_stack();
 //										FIN=1; 
-										delt_pulse_count=(float)(Delt_temp-Modbus_weight.weight_long)*((float)Modbus_pulse.target_totall_pulse/(float)Target);
-										delt_pulse();
-										if(no_recive_x_signals>100)no_recive_x_signals=100;
-										if(no_recive_x_signals<5)no_recive_x_signals=5;
-										pulse_delay=Delay_Pre_process+delt_pulse_count/no_recive_x_signals;
-										if(pulse_delay>120)pulse_delay=120;
-										c_t100=pulse_delay;
-										//c_t100=Delay_Pre_process;
-										auto_t100=0;state_operation=9;
-//									  break;
+										if(Initial_power_value==0)
+										{
+											auto_t100	=0;state_operation=10;LOW_ERR;
+											send_302();
+										}
+										else
+										{
+											delt_pulse_count=(float)(Target-Modbus_weight.weight_long)*((float)Modbus_pulse.target_totall_pulse/(float)Target);
+											delt_pulse();
+											if(no_recive_x_signals>100)no_recive_x_signals=100;
+											if(no_recive_x_signals<1)no_recive_x_signals=1;
+											pulse_delay=Delay_Pre_process+delt_pulse_count/no_recive_x_signals;
+											if(pulse_delay>120)pulse_delay=120;
+											c_t100=pulse_delay;
+											//c_t100=Delay_Pre_process;
+											auto_t100=0;state_operation=9;
+											break;
+										}
+//									  
 									}
 								 //合格
-								if (abs(Target+Dlet_error)>Modbus_weight.weight_long && Modbus_weight.weight_long>abs(Target-Dlet_error))
-									{ Feed_signal_buffer[1]|=0x20;	//反馈信号，如 合格点亮
+								if(abs(Target+Dlet_error)>Modbus_weight.weight_long && Modbus_weight.weight_long>abs(Target-Dlet_error))
+									{ 
+										Feed_signal_buffer[1]|=0x20;	//反馈信号，如 合格点亮
 									  auto_t100	=0;state_operation=10;Pass;
 									  system_indicator=10; //合格
 									  Signal_lamp[7]=0x01;// 绿灯
 
-//									  store_test_result_to_stack();
-//									  accumulate();
-//										store_test_result_to_stack();
-//										get_test_result_form_stack();
-//										FIN=1;
-//									  break;
 										
 										send_302();
-							       }
+							     }
 
-									  store_test_result_to_stack();
-									  accumulate();
-									  frezen_AD_DISPLAY_DELAY_TIMER=3;
-									  frezen_AD_DISPLAY_DELAY_TIMER_flag=1;
-										
-										
+								store_test_result_to_stack();
+								accumulate();
+								if(AUTH)
+								{
+									if(auth)
+									{
+										auth--;
+										if(!auth)
+										{
+											F302_Fram[0]='*';
+											F302_Fram[1]='*';
+											F302_Fram[2]='.';
+											F302_Fram[3]='.';
+											F302_Fram[4]='.';
+											F302_Fram[5]='x';
+											F302=6;
+										}
+									}
+								}
 
-//					if(system_indicator==10) //合格	
-//					{Signal_lamp[7]=0x01;}	// 绿灯
-//	
-////					if(system_indicator==9) //超差	
-////					{Signal_lamp[4]=0x02;}	// 红灯
-//
-//					if(system_indicator==9) //超差	
-//					{Signal_lamp[1]=0x01;}	// 绿灯
-//	
-////					if(system_indicator==1) //欠差	
-////					{Signal_lamp[5]=0x02;}	// 红灯
-//
-//					if(system_indicator==1) //欠差	
-//					{Signal_lamp[0]=0x01;}	// 绿灯
-
-
-//									  c_t100=Delay_Next_loop/2;
-//									  store_test_result_to_stack();
-//									  get_test_result_form_stack();
-//									  px=status_and_datum();
+			
+								frezen_AD_DISPLAY_DELAY_TIMER=3;
+								frezen_AD_DISPLAY_DELAY_TIMER_flag=1;
+		
 					}
 		break;
 		case 10:	 
@@ -1124,29 +1060,7 @@ long weight_temp;
 								Write_image_para(XX_image_Pre_feed);
 						}
 
-
-
-
-		//        定值下限<平均值<定值上限
-//		          if(Weighting_even>=Target_down_limt&&Weighting_even<=Target_uper_limt)//a 参数定量下限 Target_down_limt //a 参数定量上限 Target_uper_limt                               
-//		                {sum=0;} //清除累计器
-//					//补尝超上限,提前量加一	
-////		          if(Weighting_even>Target_uper_limt&&image_Pre_feed<Pre_feed+4)
-//		          if(Weighting_even>Target_uper_limt&&Pre_feed<Pre_feed_modify_uper_limt) //*2017-10-28am*
-//				  	{// 参数提前量 Pre_feed
-//						Pre_feed++;	sum=0; //清除累计器	
-//						Write_image_para(XX_image_Pre_feed);
-//					   //RAM  int Pre_feed_modify_uper_limt;//参数提前量修正上限
-//					} 
-//		          //补尝超下限,提前量减一		                                   
-//		          if(Weighting_even<Target_down_limt&&Pre_feed>Pre_feed_modify_down_limt) //*2017-10-28am*
-//				       {	   //RAM  int Pre_feed_modify_down_limt;//参数提前量修正下限
-//								Pre_feed--;	sum=0; //清除累计器
-//								Write_image_para(XX_image_Pre_feed);
-//					   }   
-					   
-					   
-					   
+   
 					                                  
 				 }
 		 }
@@ -1157,18 +1071,21 @@ long weight_temp;
 						weight_temp+=0.5*pow(10,Cal_point);
 						weight_temp/=pow(10,Cal_point);
 
-//						Modbus_weight.weight_long+=0.5*pow(10,Cal_point);
-//						 Modbus_weight.weight_long/=pow(10,Cal_point);
 					 }
 				Weighting_T+=weight_temp;
+
 //				Weighting_T+=Modbus_weight.weight_long;
+					 
 				Weighting_package++;
+		
 				store_ton_package();
+				
+				arr_buf[0x12]=(Weighting_T>>8)&0x0ff;
+				arr_buf[0x13]=Weighting_T&0x0ff;					 
+				arr_buf[0x14]=(Weighting_package>>8)&0x0ff;
+				arr_buf[0x15]=Weighting_package&0x0ff;
 
 }  
-
-
-
 
 void AD_F_process(void)
 {
@@ -1326,6 +1243,198 @@ unsigned char i;
 	stack_head--;
 	if(stack_head>=stack_top)stack_head=0;
 	return ADresult;
+}
+
+
+void auth_receive(unsigned char Data)
+{
+	static unsigned char modbus_counter=0;
+	unsigned int px;
+	unsigned char i;
+	
+	switch(modbus_counter)
+	{
+		case 0:
+			if(Data==Comm_Addr)
+			{
+				c1_rec_buf[modbus_counter]=Data;
+				modbus_counter++;
+			}
+			else modbus_counter=0;
+			
+			break;
+		case 1:
+			if(Data==0x06)
+			{
+				c1_rec_buf[modbus_counter]=Data;
+				modbus_counter++;
+			}
+			else modbus_counter=0;
+			
+			break;
+		case 2:
+			if(Data==0x00)
+			{
+				c1_rec_buf[modbus_counter]=Data;
+				modbus_counter++;
+			}
+			else modbus_counter=0;
+			
+			break;
+		case 3:
+			if(Data==0x01)
+			{
+				c1_rec_buf[modbus_counter]=Data;
+				modbus_counter++;
+			}
+			else modbus_counter=0;
+			
+			break;
+		case 4:
+			if(Data==0x00)
+			{
+				c1_rec_buf[modbus_counter]=Data;
+				modbus_counter++;
+			}
+			else modbus_counter=0;
+			
+			break;
+		case 5:
+		
+			c1_rec_buf[modbus_counter]=Data;
+			modbus_counter++;
+			//for(i=0;i<6;i++)
+			//F302_Fram[i]=c1_rec_buf[i];
+			//F302=6;
+			break;
+		case 6:
+			c1_rec_buf[modbus_counter]=Data;
+			modbus_counter++;
+			break;
+		case 7:
+			c1_rec_buf[modbus_counter]=Data;
+			px=mtb_crc_calc(c1_rec_buf,6);
+			if((c1_rec_buf[6]==(px&0x0ff))&&(c1_rec_buf[7]==((px>>8)&0x0ff)))
+			{
+				if(AUTH)
+				{
+					auth=c1_rec_buf[5]*10;
+					if(auth==0)
+					{
+						F302_Fram[0]='*';
+						F302_Fram[1]='*';
+						F302_Fram[2]='.';
+						F302_Fram[3]='.';
+						F302_Fram[4]='.';
+						F302_Fram[5]='o';
+						F302=6;
+					}
+				}
+			}
+	
+			modbus_counter=0;
+			break;
+		default:
+			modbus_counter=0;
+			break;
+		
+	}
+}
+void modbus_receive(unsigned char Data)
+{
+	static unsigned char modbus_counter=0;
+	unsigned int px;
+	unsigned char i;
+	switch(modbus_counter)
+	{
+		case 0:
+			if(Data==Comm_Addr)
+			{
+				mod_rec_buf[modbus_counter]=Data;
+				modbus_counter++;
+			}
+			else modbus_counter=0;
+			break;
+		case 1:
+			if(Data==0x03)
+			{
+				mod_rec_buf[modbus_counter]=Data;
+				modbus_counter++;
+			}
+			else modbus_counter=0;
+			break;
+		case 2:
+			if(Data==0x00)
+			{
+				mod_rec_buf[modbus_counter]=Data;
+				modbus_counter++;
+			}
+			else modbus_counter=0;
+			break;
+		case 3:
+			mod_rec_buf[modbus_counter]=Data;
+			
+			modbus_counter++;
+			break;
+		case 4:
+			if(Data==0x00)
+			{
+				mod_rec_buf[modbus_counter]=Data;
+				modbus_counter++;
+			}
+			else modbus_counter=0;
+			break;
+		case 5:
+			mod_rec_buf[modbus_counter]=Data;
+			
+			modbus_counter++;
+			break;
+		case 6:
+			mod_rec_buf[modbus_counter]=Data;
+			modbus_counter++;
+			break;
+		case 7:
+			mod_rec_buf[modbus_counter]=Data;
+			px=mtb_crc_calc(mod_rec_buf,6);
+			if((mod_rec_buf[6]==(px&0x0ff))&&(mod_rec_buf[7]==((px>>8)&0x0ff)))
+			{
+			
+				modbus_Fram[0]=Comm_Addr;
+				modbus_Fram[1]=0x03;
+				modbus_Fram[2]=mod_rec_buf[5]*2;
+				if(modbus_Fram[2]>0x07f)modbus_Fram[2]=0x7f;
+				if(mod_rec_buf[3]>0x075)mod_rec_buf[3]=0x75;
+				if(mod_rec_buf[3]<0x06a)mod_rec_buf[3]=0x6a;
+				for(i=0;i<mod_rec_buf[5];i++)
+				{
+					modbus_Fram[3+i*2]=arr_buf[(mod_rec_buf[3]+i-0x6a)*2];
+					modbus_Fram[3+i*2+1]=arr_buf[(mod_rec_buf[3]+i-0x6a)*2+1];
+				}
+				px=mtb_crc_calc(modbus_Fram,3+modbus_Fram[2]);
+				modbus_Fram[3+modbus_Fram[2]]=(px&0x0ff);					             
+				modbus_Fram[4+modbus_Fram[2]]=((px>>8)&0x0ff);	
+				//modbus_Fram[3+modbus_Fram[2]]=0x55;		
+				//modbus_Fram[4+modbus_Fram[2]]=0x0aa;		
+				u3_send_count=5+modbus_Fram[2];
+			
+			}
+			else 
+			{
+				for(i=0;i<8;i++)
+				{
+					modbus_Fram[i]=mod_rec_buf[i];
+				}
+				modbus_Fram[8]=(px>>8)&0x0ff;
+				modbus_Fram[9]=px&0x0ff;
+				u3_send_count=10;
+			}
+			modbus_counter=0;
+			break;
+		default:
+			modbus_counter=0;
+			break;
+		
+	}
 }
 
 void PC_comm3_command(unsigned char Data)
@@ -1518,12 +1627,7 @@ void send_302()
 		F302_Fram[1]=0x03;
 		F302_Fram[2]=0x04;
 		
-		//F302_Fram[3]=Modbus_weight.long_weight[0];
-		//F302_Fram[4]=Modbus_weight.long_weight[1];;
-		//F302_Fram[5]=Modbus_weight.long_weight[2];
-		//F302_Fram[6]=Modbus_weight.long_weight[3];
-	
-	
+		
 		weigth=(unsigned long int)Modbus_weight.weight_long;
 		weigth*=pow(10,4-Cal_point);
 	
@@ -1532,54 +1636,32 @@ void send_302()
 		F302_Fram[5]=(weigth>>8)&0x0ff;
 		F302_Fram[6]=weigth&0x0ff;
 	
-		px=mtb_crc_calc((unsigned char *)delt_pulse_string_modbus,7);
+		px=mtb_crc_calc((unsigned char *)F302_Fram,7);
 		F302_Fram[7]=px&0x0ff;					             
 		F302_Fram[8]=(px>>8)&0x0ff;	
+		F302=9;
+	
+	//send to modbus arry--------------
+		arr_buf[0x16]=(weigth>>24)&0x0ff;
+		arr_buf[0x17]=(weigth>>16)&0x0ff;
+		arr_buf[0x18]=(weigth>>8)&0x0ff;
+		arr_buf[0x19]=weigth&0x0ff;
+//send to modbus arry----------------
 	
 
 	//	Delay((u32)100*delt_pulse_count);
-		F302=1;
+		
+}
+void clear_arr()
+{
+		arr_buf[0x16]=0;
+		arr_buf[0x17]=0;
+		arr_buf[0x18]=0;
+		arr_buf[0x19]=0;
 }
 
-// if (FIN)
-// 	{
-//	 for(i=0;i<12;i++)
-//		{	USART_SendData(UART4,sig_pulse_string_modbus[i]);
-//			while(USART_GetFlagStatus(UART4, USART_FLAG_TXE) == RESET);
-//		}
-//
-//	 for(i=0;i<12;i++)
-//		{	USART_SendData(UART4,delt_pulse_string_modbus[i]);
-//			while(USART_GetFlagStatus(UART4, USART_FLAG_TXE) == RESET);
-//		}
-//	   FIN=0;
-//	}
 
- 
-//_
 
-//		if(KEYN<=30&&KEYN>=15){KEYN--;return;}//KEYN=30 after key processing
-//		else
-//		     {
-//			   if(!KEYH){ KEYN=0;OLDK=0;KEYH=0;return;}//release
-//			   else	return;//不放
-//			 } 
-//
-//        if(!KEYH)return;//key empty
-//		if(KEYH&&!KEYN)
-//		  {OLDK=KEYH;KEYN++;return;}//test first pressed
-//		if(KEYH&&KEYN)
-//		 {
-//	        if(KEYH!=OLDK)
-//				{ KEYN=0;OLDK=0;KEYH=0;return;}//抖动，测试作废
-//			else
-//			  { 
-//				   if(KEYN<9)
-//				   	   { KEYN++; return;}
-//				    else//when KEYN=9,watting for key processing
-//					   {return;} //KEYN=30 after key processing
-//			  }
-//	    }
 
 
 
