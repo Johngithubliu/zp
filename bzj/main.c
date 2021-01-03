@@ -21,7 +21,7 @@
 																		//2*2=counter0 
 																		//2*2,reside.
 
-#define AUTH	1
+#define AUTH	0
 #define AFTER_X48	1
 
 
@@ -53,7 +53,7 @@ void moveout();
 
 unsigned long int counter0;         /* counter for pack       */
 
-const unsigned char VER=249;
+const unsigned char VER=250;
 
 data  unsigned char in[8];
 data  unsigned char out[8];
@@ -332,8 +332,8 @@ static bit pre_x54=0,x54;
 	static unsigned char status_updown=0;
 	
 	static unsigned char x8,pre_x8=0;
-	static unsigned char y32,pre_y32=0;
-	static unsigned char t_y55on=0,t_y55off=0;
+//	static unsigned char y32,pre_y32=0;
+//	static unsigned char t_y55on=0,t_y55off=0;
 	
 	
 //	printf("task SYS_CON started!\n");
@@ -365,6 +365,7 @@ static bit pre_x54=0,x54;
 			}
 			pre_x8=x8;
 		//x8 end
+			/*
 		//y32 ----------------
 			y32=get_y(32);
 			if(y32&&!pre_y32)
@@ -380,7 +381,7 @@ static bit pre_x54=0,x54;
 			
 			if(t_y55off)t_y55off--;
 			if(t_y55off==1){clear_y(55);		}
-
+*/
 			
 			//move X34 code to here
 			if(x4&&!pre_x4)
