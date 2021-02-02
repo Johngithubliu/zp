@@ -978,7 +978,7 @@ void process_feed_material(void)
 		   for(i=0;i<8;i++)
 			  {if(i!=6)Signal_lamp[i]=0x00;}//ÐÅºÅµÆÈ«ºÚ	//*2017-10-28am*
 //												 Signal_lamp[7]=0x00; Signal_lamp[1]=0x00;Signal_lamp[0]=0x00;
-					 state_operation=3;
+						if(state_operation!=1)state_operation=3;
 
 					}
 
