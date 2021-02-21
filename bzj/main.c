@@ -21,7 +21,7 @@
 																		//2*2=counter0 
 																		//2*2,reside.
 
-#define AUTH	0
+#define AUTH	1
 #define AFTER_X48	1
 
 
@@ -53,8 +53,7 @@ void moveout();
 
 unsigned long int counter0;         /* counter for pack       */
 
-const unsigned char VER=250;
-
+const unsigned char VER=251;
 data  unsigned char in[8];
 data  unsigned char out[8];
 xdata unsigned char delay_t[64];
@@ -2031,6 +2030,7 @@ void push_pack()	_task_	PUSH_PACK
 					}
 				
 			task_status[PUSH_PACK]=12;
+			os_wait2(K_TMO,50);//add at V251
 			while(!X18)
 				{
 					error=18;
