@@ -284,7 +284,7 @@ unsigned char mod_rec_buf[10];
 void modbus_receive(unsigned char Data);
 void auth_receive(unsigned char Data);
 void clear_arr();
-unsigned char auth=10;
+unsigned char auth=30;
 unsigned arr_buf[32];
 unsigned char u3_send_count=0;
 unsigned char c1_rec_buf[8];
@@ -1318,7 +1318,7 @@ void auth_receive(unsigned char Data)
 			{
 				if(AUTH)
 				{
-					auth=c1_rec_buf[5]*10;
+					auth=c1_rec_buf[5]*30;
 					if(auth==0)
 					{
 						F302_Fram[0]='*';
